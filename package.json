@@ -1,0 +1,13 @@
+{
+  "name": "banco-de-atletas",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Banco de Atletas — sistema de cadastro e shortlist de atletas (Observação técnica)",
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "@upstash/redis": "^1.34.3",
+    "@vercel/blob": "^0.27.1",
+    "redis": "^4.7.0"
+  }
+}
