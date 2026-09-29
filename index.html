@@ -1,0 +1,1867 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#08070B">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%238B5CF6'/%3E%3Ccircle cx='16' cy='16' r='7' fill='none' stroke='white' stroke-width='2.5'/%3E%3Cpath d='M16 2v28' stroke='white' stroke-width='2'/%3E%3C/svg%3E">
+<style>html,body{margin:0}img{max-width:100%}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{font-size:14px}</style>
+<script src="/vercel-adapter.js"></script>
+<title>Banco de Atletas Série B</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#08070B; --surface:#121017; --surface-2:#1A1721; --surface-3:#231F2C; --ink:#F3F0FA; --ink-2:#B9B2CC; --ink-3:#7D7690;
+  --line:#2A2535; --line-2:#3A3249;
+  --accent:#8B5CF6; --accent-2:#B794FF; --accent-deep:#4C1D95; --accent-ink:#FFFFFF; --accent-soft:rgba(139,92,246,.16); --accent-glow:rgba(139,92,246,.35);
+  --danger:#FF7A85; --danger-soft:rgba(255,122,133,.12); --warn:#F5B84B;
+  --gk:#F5B84B; --zag:#6EA8FF; --lat:#3FD1C4; --vol:#B794FF; --mei:#F37FC6; --ext:#FF8A5B; --ata:#FF5C7A; --out:#8D869E;
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 12px 32px rgba(0,0,0,.45);
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--bg)}
+body{background:var(--bg);background-image:radial-gradient(900px 420px at 85% -120px,rgba(139,92,246,.22),transparent 70%),radial-gradient(600px 300px at -10% 0,rgba(76,29,149,.25),transparent 70%);background-repeat:no-repeat;color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.5;padding-inline:16px;padding-block:0 48px;min-height:100%}
+.wrap{max-width:1240px;margin:0 auto}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent-2);outline-offset:2px}
+::selection{background:var(--accent);color:#fff}
+
+header.top{position:relative;display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;padding-block:32px 22px;border-bottom:1px solid var(--line-2);overflow:hidden}
+header.top::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:linear-gradient(90deg,var(--accent) 0%,var(--accent-2) 40%,transparent 100%)}
+.pitch{position:absolute;right:-40px;top:-30px;width:360px;height:220px;opacity:.5;pointer-events:none;color:var(--accent)}
+@media (max-width:700px){.pitch{width:240px;right:-80px;opacity:.3}}
+.head-txt,.actions{position:relative;z-index:1}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-2)}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,5.5vw,56px);line-height:.95;margin:8px 0 0;letter-spacing:.01em;text-transform:uppercase;text-wrap:balance}
+h1 span{color:var(--accent-2)}
+.sub{color:var(--ink-2);margin-top:8px;font-variant-numeric:tabular-nums}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line-2);background:var(--surface);padding:9px 14px;border-radius:8px;cursor:pointer;font-weight:500;white-space:nowrap;transition:border-color .12s,background .12s}
+.btn:hover{border-color:var(--accent);background:var(--surface-2)}
+.btn.primary{background:linear-gradient(180deg,#9A6BFF,var(--accent));border-color:var(--accent);color:var(--accent-ink);box-shadow:0 0 0 1px rgba(183,148,255,.25) inset,0 6px 20px var(--accent-glow)}
+.btn.primary:hover{filter:brightness(1.1)}
+.btn.danger{color:var(--danger);border-color:transparent;background:transparent}
+.btn.danger:hover{background:var(--danger-soft);border-color:transparent}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn svg{width:16px;height:16px;flex:none}
+
+/* Competições */
+.comps{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px;align-items:center}
+.comp-sel{border:1px solid var(--line-2);background:var(--surface);border-radius:8px;padding:9px 12px;min-width:240px;max-width:100%;color:var(--ink);font-weight:500}
+.comp-sel.on{border-color:var(--accent);background:var(--accent-soft);color:#fff;box-shadow:0 4px 18px var(--accent-soft)}
+.comp-sel:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.comps .lbl-c{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-right:4px}
+.comp-tab{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);padding:7px 12px 7px 14px;border-radius:999px;cursor:pointer;font-weight:500;font-size:13px}
+.comp-tab .k{font-family:var(--mono);font-size:11px;background:var(--surface-3);color:var(--ink-2);padding:1px 7px;border-radius:999px;font-variant-numeric:tabular-nums}
+.comp-tab:hover{border-color:var(--accent);color:var(--ink)}
+.comp-tab[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 4px 18px var(--accent-glow)}
+.comp-tab[aria-pressed="true"] .k{background:rgba(255,255,255,.2);color:#fff}
+
+.strip-cap{margin-top:16px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.strip-cap b{color:var(--accent-2);font-weight:500}
+.strip-cap + .strip{margin-top:8px}
+.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:10px;margin-top:14px}
+.stat{position:relative;border-top:3px solid var(--c)!important;display:flex;flex-direction:column;gap:0;padding:0;text-align:left;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;transition:border-color .14s,box-shadow .14s,transform .14s}
+.stat:hover{border-color:var(--line-2);transform:translateY(-1px)}
+.stat[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset,0 8px 26px var(--accent-soft)}
+.stat .ico{display:grid;place-items:center;height:78px;color:var(--c);background:radial-gradient(60% 90% at 50% 45%,color-mix(in srgb,var(--c) 20%,transparent),transparent 70%),radial-gradient(120% 100% at 50% 0,#1D1729,#110E17);border-bottom:1px solid var(--line)}
+.stat .ico svg{width:40px;height:40px;filter:drop-shadow(0 0 6px color-mix(in srgb,var(--c) 45%,transparent))}
+.stat[aria-pressed="true"] .ico{background:radial-gradient(60% 90% at 50% 45%,color-mix(in srgb,var(--c) 32%,transparent),transparent 70%),radial-gradient(120% 100% at 50% 0,#2A1B4A,#130E1F)}
+svg .ln{stroke:rgba(183,148,255,.28);fill:none;stroke-width:.8}
+svg .off{fill:rgba(185,178,204,.22)}
+svg .on{fill:var(--c,var(--accent));filter:drop-shadow(0 0 3px var(--c,var(--accent)))}
+svg .halo{fill:var(--c,var(--accent));opacity:.18}
+.stat .info{padding:12px 12px 12px;display:flex;flex-direction:column;gap:5px}
+.stat .top{display:flex;align-items:baseline;justify-content:space-between;gap:6px}
+.stat .n{font-family:var(--display);font-size:36px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;color:#fff}
+.stat .pct{font-family:var(--mono);font-size:11px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.stat .l{font-size:11px;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.stat .bar{height:3px;border-radius:2px;background:var(--surface-3);overflow:hidden}
+.stat .bar i{display:block;height:100%;background:var(--c,var(--accent));border-radius:2px}
+.pitchxs{display:block;width:62px;height:auto;aspect-ratio:3/2;flex:none;border-radius:4px;background:#110E17;border:1px solid var(--line)}
+.pitchxs .ln{stroke-width:1.4}
+.pitchxs .off{fill:rgba(185,178,204,.16)}
+.pitchxs .halo{display:none}
+.pitchbig{display:block;width:100%;max-width:460px;margin-inline:auto;height:auto;aspect-ratio:3/2;border-radius:10px;background:radial-gradient(120% 100% at 50% 0,#2A1B4A,#110E17);border:1px solid var(--line-2)}
+.pitchbig .ln{stroke-width:.5}
+.pitchbig .pick{cursor:pointer}
+.pitchbig .pick:hover .off{fill:var(--accent-2)}
+.pitchbig .lab{font-family:var(--mono);font-size:3.4px;fill:var(--ink-3);text-anchor:middle;letter-spacing:.2px;pointer-events:none}
+.pitchbig .lab.on-t{fill:#fff;font-weight:600}
+.cg-wrap{display:grid;gap:10px}
+.cg-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.cg-bar .seg button{font-size:12px;padding:6px 10px}
+.cg-legend{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;font-size:12px;color:var(--ink-2)}
+.cg-legend span{display:inline-flex;align-items:center;gap:6px}
+.lg{width:10px;height:10px;border-radius:50%;display:inline-block;border:1.5px solid var(--accent-2)}
+.lg.l1{background:var(--accent-2);box-shadow:0 0 6px var(--accent-2)}
+.lg.l2{background:var(--accent-2);opacity:.55}
+.lg.l3{background:transparent}
+svg .on2{fill:var(--c,var(--accent));opacity:.6}
+svg .on3{fill:none;stroke:var(--c,var(--accent));stroke-width:1}
+.pitchxs .on3{stroke-width:2.2}
+@media (prefers-reduced-motion:reduce){.stat{transition:none}.stat:hover{transform:none}}
+.dot{width:8px;height:8px;border-radius:2px;display:inline-block;background:var(--c,var(--out))}
+
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-block:16px;align-items:center}
+.toolbar .search{flex:1 1 240px;position:relative}
+.toolbar input,.toolbar select{width:100%;border:1px solid var(--line-2);background:var(--surface);border-radius:8px;padding:9px 12px}
+.toolbar input:focus,.toolbar select:focus,.f input:focus,.f select:focus,.f textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.toolbar .search input{padding-left:34px}
+.toolbar .search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--accent-2)}
+.toolbar select{flex:0 1 170px;width:auto}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:transparent;padding:8px 10px;cursor:pointer;color:var(--ink-2)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.seg svg{width:16px;height:16px;display:block}
+.count{font-family:var(--mono);font-size:12px;color:var(--ink-3);margin-left:auto}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:10px}
+.card{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;text-align:left;padding:0;transition:transform .14s ease,box-shadow .14s ease,border-color .14s ease}
+.card:hover{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset,0 14px 36px rgba(0,0,0,.5),0 0 28px var(--accent-soft);transform:translateY(-2px)}
+.card .ph{position:relative;aspect-ratio:4/3;background:radial-gradient(120% 90% at 50% 0,var(--surface-3),var(--surface-2) 60%,#0D0B12);max-width:100%;overflow:hidden}
+.card .ph::after{content:"";position:absolute;inset:auto 0 0 0;height:55%;background:linear-gradient(180deg,transparent,rgba(8,7,11,.92));pointer-events:none}
+.card .ph img{position:relative;width:100%;height:100%;object-fit:cover;object-position:center 30%;display:block}
+.initials{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:40px;color:var(--c,var(--out));opacity:.5;letter-spacing:.02em}
+.card .pos{position:absolute;left:8px;top:8px;z-index:1}
+.card .comp{position:absolute;right:8px;top:8px;z-index:1;max-width:calc(100% - 64px)}
+.card .ph .nm{position:absolute;left:10px;right:10px;bottom:7px;z-index:1;font-size:17px}
+.card .stripe{height:3px;background:linear-gradient(90deg,var(--c,var(--out)),var(--accent))}
+.card .body{padding:8px 10px 10px;display:flex;flex-direction:column;gap:3px;flex:1}
+.card .meta{font-size:12px;gap:2px 8px}
+.card .chip{font-size:10px;padding:2px 6px}
+.card .cchip{font-size:10px;padding:2px 7px}
+.card .pill{font-size:11px;padding:1px 7px}
+.nm{font-family:var(--display);font-size:22px;font-weight:600;line-height:1.05;text-transform:uppercase;color:#fff;text-wrap:balance}
+.meta{display:flex;flex-wrap:wrap;gap:4px 12px;color:var(--ink-2);font-size:13px}
+.meta b{font-weight:600;color:var(--ink)}
+.card .tr{color:var(--ink-3);font-size:12px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;padding-top:6px;border-top:1px solid var(--line);gap:8px}
+
+.chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:5px;background:rgba(8,7,11,.75);color:var(--c,var(--out));border:1px solid currentColor;font-weight:500;backdrop-filter:blur(4px)}
+.cchip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;background:rgba(76,29,149,.85);color:#E9DDFF;border:1px solid rgba(183,148,255,.45);backdrop-filter:blur(4px);white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis}
+.cchip svg{width:11px;height:11px;flex:none}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 10px 3px 7px;border-radius:999px;background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line-2);white-space:nowrap}
+.pill svg{width:13px;height:13px;flex:none}
+.pill.s-cadastrado{color:#9FD7B8;border-color:rgba(159,215,184,.35);background:rgba(159,215,184,.08)}
+.pill.s-prioridade{background:var(--accent);color:#fff;border-color:transparent;font-weight:600}
+.pill.s-em-observacao{color:var(--accent-2);border-color:rgba(183,148,255,.5);background:var(--accent-soft)}
+.pill.s-monitorar{color:var(--warn);border-color:rgba(245,184,75,.5);background:rgba(245,184,75,.1)}
+.pill.s-descartado{color:var(--danger);border-color:rgba(255,122,133,.35);background:var(--danger-soft)}
+
+.tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+table{width:100%;border-collapse:collapse;min-width:1000px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-2);font-weight:500;position:sticky;top:0;background:var(--surface-2);cursor:pointer;user-select:none;white-space:nowrap}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--accent-soft)}
+td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
+.thumb{width:36px;height:36px;border-radius:50%;overflow:hidden;position:relative;background:var(--surface-2);border:2px solid var(--c,var(--out));flex:none}
+.thumb img{position:relative;width:100%;height:100%;object-fit:cover}
+.thumb .initials{font-size:14px;opacity:.85}
+.who{display:flex;align-items:center;gap:12px;font-weight:600}
+.thumb.big{width:54px;height:54px;border-width:2px}
+.thumb.big .initials{font-size:19px}
+.who-t{display:flex;flex-direction:column;min-width:0}
+.who-t .nm-t{font-weight:600;line-height:1.2}
+.who-t .club-t{font-size:12px;font-weight:400;color:var(--ink-2);margin-top:2px}
+td.posc .pos-main{display:flex;align-items:center;gap:8px;font-weight:600;white-space:nowrap}
+td.posc .fn{font-size:12px;color:var(--ink-2);margin-top:3px;white-space:nowrap}
+td.posc .fn b{font-family:var(--mono);font-weight:500;color:var(--accent-2);margin-right:2px}
+td.tx{max-width:320px;color:var(--ink-2);font-size:13px}
+td .chip{backdrop-filter:none;background:transparent}
+td .cchip{max-width:none}
+
+.empty,.notice{background:var(--surface);border:1px dashed var(--line-2);border-radius:12px;padding:32px;text-align:center;color:var(--ink-2)}
+.notice{border-style:solid;text-align:left;padding:14px 16px;margin-bottom:12px}
+
+/* Editor */
+.scrim{position:fixed;inset:0;background:rgba(4,3,8,.7);backdrop-filter:blur(3px);z-index:20;display:flex;justify-content:center;align-items:center;padding:16px;padding-top:calc(16px + env(safe-area-inset-top,0px));padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+.panel{background:var(--surface);width:min(760px,100%);max-height:100%;overflow-y:auto;box-shadow:var(--shadow),0 0 50px var(--accent-soft);display:flex;flex-direction:column;border:1px solid var(--line-2);border-radius:14px}
+.panel-head{position:sticky;top:0;z-index:2;background:var(--surface);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line-2);box-shadow:0 1px 0 var(--accent-soft)}
+.panel-head h2{font-family:var(--display);font-size:28px;text-transform:uppercase;margin:0;line-height:1}
+.panel form{padding:20px;display:flex;flex-direction:column;gap:18px}
+.fs{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.f{display:flex;flex-direction:column;gap:5px;grid-column:span 6}
+.f.s2{grid-column:span 2}.f.s3{grid-column:span 3}.f.s4{grid-column:span 4}
+@media (max-width:560px){.f.s2,.f.s3,.f.s4{grid-column:span 6}}
+.f label,.lbl{font-size:12px;font-weight:600;color:var(--ink-2)}
+.f input,.f select,.f textarea{border:1px solid var(--line-2);background:var(--bg);border-radius:8px;padding:9px 11px;width:100%}
+.f textarea{min-height:76px;resize:vertical}
+.req{color:var(--accent-2)}
+.section-t{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-2);border-bottom:1px solid var(--line-2);padding-bottom:6px}
+.photo{display:grid;grid-template-columns:150px 1fr;gap:16px;align-items:start}
+@media (max-width:480px){.photo{grid-template-columns:1fr}}
+.photo .prev{position:relative;aspect-ratio:1/1;border-radius:10px;overflow:hidden;background:radial-gradient(120% 90% at 50% 0,var(--surface-3),var(--bg));border:1px solid var(--accent);box-shadow:0 0 24px var(--accent-soft);max-width:100%}
+.photo .prev img{position:relative;width:100%;height:100%;object-fit:cover;background:#fff}
+.tabs{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden;margin-bottom:10px}
+.tabs button{border:0;background:var(--bg);padding:7px 12px;cursor:pointer;font-size:13px;color:var(--ink-2)}
+.tabs button[aria-selected="true"]{background:var(--accent);color:#fff}
+.drop{display:block;border:1.5px dashed var(--line-2);border-radius:10px;padding:18px;text-align:center;background:var(--bg);cursor:pointer;color:var(--ink-2)}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.hint{font-size:12px;color:var(--ink-3);margin-top:6px}
+.hint a{color:var(--accent-2)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.panel-foot{position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--line-2);padding:14px 20px;display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap;margin-top:auto}
+.edfs{border:0;margin:0;padding:0;min-width:0;display:flex;flex-direction:column;gap:18px}
+.panel.view #phCtrls,.panel.view .cg-bar,.panel.view #delZone,.panel.view .ed-only{display:none!important}
+.panel.view .photo{grid-template-columns:150px 1fr}
+.panel.view .f input,.panel.view .f select,.panel.view .f textarea{background:var(--surface-2);border-color:transparent;color:var(--ink);-webkit-text-fill-color:var(--ink);opacity:1;appearance:none;-webkit-appearance:none;resize:none;cursor:default}
+.panel.view .f input::placeholder{color:transparent;-webkit-text-fill-color:transparent}
+.panel-foot > .row{margin-left:auto}
+.panel.view .pitchbig .pick{cursor:default}
+.panel.view .pitchbig .pick:hover .off{fill:rgba(185,178,204,.22)}
+.mode-tag{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid var(--line-2);color:var(--ink-2);margin-left:8px;vertical-align:middle}
+.panel:not(.view) .mode-tag{color:var(--accent-2);border-color:var(--accent)}
+#btnEdit[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:#fff}
+.motivo{background:var(--danger-soft);border:1px solid rgba(255,122,133,.35);border-radius:10px;padding:12px}
+.motivo label{color:var(--danger)!important}
+.dup{background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;font-size:13px}
+/* Timeline */
+.tl{list-style:none;margin:0;padding:0 0 0 30px;position:relative}
+.tl::before{content:"";position:absolute;left:10px;top:6px;bottom:6px;width:2px;background:linear-gradient(180deg,var(--accent),var(--line-2))}
+.tl li{position:relative;padding:0 0 16px}
+.tl li:last-child{padding-bottom:0}
+.tl .dot{position:absolute;left:-30px;top:0;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--surface);border:1.5px solid currentColor}
+.tl .dot svg{width:12px;height:12px}
+.tl .when{font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.04em}
+.tl .what{font-weight:600;margin-top:1px}
+.tl .what .from{font-weight:400;color:var(--ink-3)}
+.tl .why{margin-top:4px;font-size:13px;color:var(--ink);background:var(--danger-soft);border-left:2px solid var(--danger);padding:6px 10px;border-radius:0 6px 6px 0}
+.tl details{margin-top:4px;font-size:13px;color:var(--ink-2)}
+.tl summary{cursor:pointer;color:var(--accent-2);font-size:12px}
+.tl dl{margin:6px 0 0;display:grid;grid-template-columns:auto 1fr;gap:4px 10px}
+.tl dt{color:var(--ink-3);font-size:12px}
+.tl dd{margin:0}
+.st-cadastrado{color:#9FD7B8}.st-em-observacao{color:var(--accent-2)}.st-monitorar{color:var(--warn)}.st-prioridade{color:var(--accent)}.st-descartado{color:var(--danger)}
+.confirm{background:var(--danger-soft);color:var(--ink);border-radius:8px;padding:10px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--accent);color:#fff;padding:10px 16px;border-radius:8px;z-index:40;font-size:13px;box-shadow:0 8px 28px var(--accent-glow);max-width:calc(100% - 32px)}
+.skel{height:240px;border-radius:14px;background:linear-gradient(90deg,var(--surface) 0%,var(--surface-3) 50%,var(--surface) 100%);background-size:200% 100%;animation:sh 1.2s linear infinite;border:1px solid var(--line)}
+@keyframes sh{to{background-position:-200% 0}}
+.cropper{position:fixed;inset:0;z-index:30;background:rgba(4,3,8,.82);backdrop-filter:blur(4px);display:grid;place-items:center;padding:16px}
+.crop-box{width:min(420px,100%);background:var(--surface);border:1px solid var(--line-2);border-radius:14px;box-shadow:var(--shadow),0 0 40px var(--accent-soft);padding:18px;display:flex;flex-direction:column;gap:14px}
+.crop-box h3{font-family:var(--display);font-size:24px;text-transform:uppercase;margin:0;line-height:1}
+.crop-view{position:relative;width:100%;aspect-ratio:1/1;overflow:hidden;border-radius:10px;background:#FFFFFF;touch-action:none;cursor:grab;user-select:none;outline:1px solid var(--accent)}
+.crop-view.drag{cursor:grabbing}
+.crop-view img{position:absolute;left:0;top:0;max-width:none;transform-origin:0 0;pointer-events:none;will-change:transform}
+.crop-grid{position:absolute;inset:0;pointer-events:none;background:
+  linear-gradient(90deg,transparent calc(33.33% - .5px),rgba(255,255,255,.28) calc(33.33% - .5px),rgba(255,255,255,.28) calc(33.33% + .5px),transparent calc(33.33% + .5px),transparent calc(66.66% - .5px),rgba(255,255,255,.28) calc(66.66% - .5px),rgba(255,255,255,.28) calc(66.66% + .5px),transparent calc(66.66% + .5px)),
+  linear-gradient(180deg,transparent calc(33.33% - .5px),rgba(255,255,255,.28) calc(33.33% - .5px),rgba(255,255,255,.28) calc(33.33% + .5px),transparent calc(33.33% + .5px),transparent calc(66.66% - .5px),rgba(255,255,255,.28) calc(66.66% - .5px),rgba(255,255,255,.28) calc(66.66% + .5px),transparent calc(66.66% + .5px))}
+.crop-grid::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 2px rgba(139,92,246,.55)}
+.crop-zoom{display:flex;align-items:center;gap:10px;color:var(--ink-2)}
+.crop-zoom svg{width:16px;height:16px;flex:none}
+.crop-zoom input{flex:1;accent-color:var(--accent)}
+.crop-actions{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.sl-toggle[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:#fff}
+.sl-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:14px;margin-top:22px}
+.sl-title{font-family:var(--display);font-weight:700;font-size:clamp(26px,4vw,38px);text-transform:uppercase;line-height:1;background:transparent;border:1px solid transparent;border-radius:8px;padding:4px 8px;margin-left:-9px;width:min(620px,100%);color:#fff}
+.sl-title:hover{border-color:var(--line-2)}
+.sl-title:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.sl-sub{font-family:var(--display);font-size:18px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--accent-2)}
+.sl-forms{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.sl-select{border:1px solid var(--line-2);background:var(--surface);border-radius:8px;padding:9px 12px;font-family:var(--mono);font-size:14px;min-width:130px;color:var(--ink)}
+.sl-select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.sl-msg:empty{display:none}
+.sl-msg{margin-top:12px}
+.pitchv{position:relative;margin-top:16px;border-radius:16px;overflow:hidden;padding:34px 14px 28px;background:
+  repeating-linear-gradient(180deg,rgba(139,92,246,.05) 0 60px,transparent 60px 120px),
+  radial-gradient(120% 70% at 50% 0,#2A1B4A 0,#150F22 55%,#0C0914 100%);border:1px solid var(--line-2);box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 0 1px rgba(139,92,246,.12) inset}
+.pitchv-lines{position:absolute;inset:10px;width:calc(100% - 20px);height:calc(100% - 20px);pointer-events:none}
+.pitchv-lines *{fill:none;stroke:rgba(183,148,255,.22);stroke-width:1.2;vector-effect:non-scaling-stroke}
+.sl-rows{position:relative;display:flex;flex-direction:column;gap:22px}
+@media (min-width:761px){
+  .pitchv{padding:44px 18px 34px}
+  .sl-rows{gap:30px}
+  .sl-row{position:relative;display:block}
+  .sl-row .slot{position:absolute;left:var(--x);top:var(--dy);transform:translateX(-50%);width:min(22%,250px);max-width:none}
+}
+.sl-row{display:flex;justify-content:center;flex-wrap:wrap;gap:14px}
+.slot{flex:1 1 210px;max-width:270px;min-width:0;background:rgba(18,16,23,.94);border:2px solid var(--c);border-radius:12px;overflow:hidden;box-shadow:0 10px 26px rgba(0,0,0,.45),0 0 18px color-mix(in srgb,var(--c) 22%,transparent);display:flex;flex-direction:column}
+.slot-h{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:linear-gradient(180deg,color-mix(in srgb,var(--c) 38%,#120F18),color-mix(in srgb,var(--c) 18%,#120F18));font-family:var(--display);font-weight:700;font-size:16px;text-transform:uppercase;letter-spacing:.03em;color:#fff}
+.slot-h .k{font-family:var(--mono);font-size:11px;font-weight:500;background:rgba(0,0,0,.35);padding:1px 7px;border-radius:999px}
+.slot ul{list-style:none;margin:0;padding:0}
+.slot li{display:flex;align-items:center;gap:8px;padding:6px 6px 6px 9px;border-top:1px solid var(--line)}
+.slot li:first-child{border-top:0}
+.slot li .thumb{width:34px;height:34px}
+.slot .who2{flex:1;min-width:0;background:none;border:0;padding:0;text-align:left;cursor:pointer;display:flex;flex-direction:column}
+.slot .who2 b{font-family:var(--display);font-size:16px;font-weight:600;line-height:1.1;color:#fff;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.slot .who2 span{font-size:12px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slot .who2:hover b{color:var(--accent-2)}
+.slot .ic{flex:none;width:22px;height:26px;border-radius:6px;border:0;background:transparent;color:var(--ink-3);cursor:pointer;display:grid;place-items:center}
+.slot .ic:hover{background:var(--surface-3);color:var(--ink)}
+.slot .ic.rm:hover{background:var(--danger-soft);color:var(--danger)}
+.slot .ic svg{width:14px;height:14px}
+.slot .ic:disabled{opacity:.25;cursor:default;background:transparent}
+.slot .empty-s{padding:12px 10px;color:var(--ink-3);font-size:12px;text-align:center}
+.slot-add{margin:6px 8px 8px;border:1px dashed var(--line-2);background:transparent;color:var(--accent-2);border-radius:8px;padding:6px;cursor:pointer;font-size:13px;font-weight:500}
+.slot-add:hover{border-color:var(--accent);background:var(--accent-soft);color:#fff}
+@media (max-width:560px){.slot{flex-basis:100%;max-width:none}.pitchv{padding-inline:10px}}
+
+/* ===== Modo claro ===== */
+:root[data-mode="light"]{
+  color-scheme:light;
+  --bg:#F4F2F9; --surface:#FFFFFF; --surface-2:#F2EFF8; --surface-3:#E6E1F1; --ink:#17131F; --ink-2:#4B4459; --ink-3:#7F778F;
+  --line:#E3DEEC; --line-2:#D0C8DF;
+  --accent:#7C3AED; --accent-2:#6D28D9; --accent-ink:#FFFFFF; --accent-soft:rgba(124,58,237,.10); --accent-glow:rgba(124,58,237,.22);
+  --danger:#C62839; --danger-soft:rgba(198,40,57,.08); --warn:#B26B00;
+  --gk:#C77800; --zag:#2F5DA8; --lat:#0E8580; --vol:#6D3FC0; --mei:#B0407A; --ext:#CC4E22; --ata:#C0283F; --out:#6B6478;
+  --shadow:0 1px 2px rgba(23,19,31,.06),0 10px 28px rgba(23,19,31,.08);
+}
+:root[data-mode="light"] body{background-image:radial-gradient(900px 420px at 85% -120px,rgba(124,58,237,.12),transparent 70%),radial-gradient(600px 300px at -10% 0,rgba(124,58,237,.08),transparent 70%)}
+:root[data-mode="light"] .stat .n,
+:root[data-mode="light"] .sl-title,
+:root[data-mode="light"] .slot .who2 b,
+:root[data-mode="light"] .slot-h{color:var(--ink)}
+:root[data-mode="light"] .pitchbig .lab.on-t{fill:var(--ink)}
+:root[data-mode="light"] .comp-sel.on,
+:root[data-mode="light"] .sl-toggle[aria-pressed="true"],
+:root[data-mode="light"] #btnEdit[aria-pressed="true"]{color:var(--accent-2)}
+:root[data-mode="light"] svg .ln{stroke:rgba(109,40,217,.35)}
+:root[data-mode="light"] svg .off{fill:rgba(75,68,89,.22)}
+:root[data-mode="light"] .pitchxs{background:#F7F5FB}
+:root[data-mode="light"] .pitchbig{background:radial-gradient(120% 100% at 50% 0,#EFE9FB,#FFFFFF)}
+:root[data-mode="light"] .card .ph{background:radial-gradient(120% 90% at 50% 0,#FFFFFF,#EEE9F7 60%,#DCD4EA)}
+:root[data-mode="light"] .pill.s-cadastrado,:root[data-mode="light"] .st-cadastrado{color:#23794A}
+:root[data-mode="light"] .pill.s-cadastrado{border-color:rgba(35,121,74,.35);background:rgba(35,121,74,.07)}
+:root[data-mode="light"] .pitchv{background:repeating-linear-gradient(180deg,rgba(124,58,237,.035) 0 60px,transparent 60px 120px),radial-gradient(120% 70% at 50% 0,#F1ECFC 0,#FAF9FD 60%,#FFFFFF 100%);box-shadow:0 14px 40px rgba(23,19,31,.08),0 0 0 1px rgba(124,58,237,.08) inset}
+:root[data-mode="light"] .pitchv-lines *{stroke:rgba(109,40,217,.28)}
+:root[data-mode="light"] .slot{background:#FFFFFF;box-shadow:0 8px 22px rgba(23,19,31,.08)}
+:root[data-mode="light"] .slot-h{background:linear-gradient(180deg,color-mix(in srgb,var(--c) 22%,#FFFFFF),color-mix(in srgb,var(--c) 10%,#FFFFFF))}
+:root[data-mode="light"] .slot-h .k{background:rgba(23,19,31,.08)}
+:root[data-mode="light"] .scrim,:root[data-mode="light"] .picker,:root[data-mode="light"] .cropper{background:rgba(23,19,31,.45)}
+:root[data-mode="light"] .card:hover{box-shadow:0 0 0 1px var(--accent) inset,0 14px 34px rgba(23,19,31,.12)}
+:root[data-mode="light"] .panel.view .pitchbig .pick:hover .off{fill:rgba(75,68,89,.22)}
+:root[data-mode="light"] .chip{background:rgba(255,255,255,.92)}
+:root[data-mode="light"] td .chip{background:transparent}
+.mode-btn{padding:9px 11px}
+.mode-btn .i-sun{display:none}
+:root[data-mode="light"] .mode-btn .i-sun{display:block}
+:root[data-mode="light"] .mode-btn .i-moon{display:none}
+
+/* Somente visualização */
+body.ro #btnNew, body.ro #btnEdit, body.ro #btnSaveSL, body.ro .slot-add, body.ro .slot .ic, body.ro #delZone{display:none!important}
+.ro-tag{display:inline-block;margin-top:8px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--warn);border:1px solid currentColor;border-radius:999px;padding:3px 10px}
+/* ===== Responsivo: MacBook, iPad e Android ===== */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+button,a,.card,.stat,.comp-tab,.pk-item{-webkit-tap-highlight-color:transparent}
+/* toque: sem zoom automático do iOS nos campos, alvos maiores */
+@media (pointer:coarse){
+  input,select,textarea{font-size:16px!important}
+  .btn{min-height:42px}
+  .slot .ic{width:32px;height:32px}
+  .car .ic,.comp-tab{min-height:36px}
+  .card:hover,.stat:hover{transform:none}
+}
+/* telas grandes (MacBook 13–16") */
+@media (min-width:1400px){ .wrap{max-width:1360px} }
+/* iPad paisagem / notebooks pequenos */
+@media (max-width:1180px){
+  .strip{grid-template-columns:repeat(4,1fr)}
+  .sl-row .slot{width:min(23.5%,240px)}
+  .slot-h{font-size:14px}
+}
+/* iPad retrato / tablets Android */
+@media (max-width:1024px){
+  table{min-width:720px}
+  .c-tx{display:none}
+  .sl-head{align-items:flex-start}
+  .sl-forms{width:100%}
+  .slot-h{font-size:13px;padding:6px 8px}
+  .slot .who2 b{font-size:14px}
+  .slot li .thumb{width:28px;height:28px}
+  .slot li .thumb .initials{font-size:11px}
+  .panel{width:min(760px,100%)}
+}
+@media (max-width:900px){
+  .c-pe{display:none}
+  table{min-width:600px}
+  header.top{padding-block:22px 16px}
+  .pitch{opacity:.25}
+}
+/* celulares (iPhone / Android) */
+@media (max-width:640px){
+  .strip{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:8px;padding-bottom:6px;margin-inline:-16px;padding-inline:16px;scrollbar-width:none}
+  .strip::-webkit-scrollbar{display:none}
+  .stat{flex:0 0 118px;scroll-snap-align:start}
+  .stat .n{font-size:24px}
+  .comp-sel{flex:1 1 auto;min-width:0}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .c-comp{display:none}
+  table{min-width:480px}
+  .thumb.big{width:44px;height:44px}
+  .card .ph .nm{font-size:15px}
+  .card .tr{display:none}
+  .card .comp{max-width:calc(100% - 52px)}
+  .toolbar .search{flex-basis:100%}
+  .toolbar select{flex:1 1 40%}
+  .count{margin-left:0}
+  .actions{width:100%}
+  .actions .btn{flex:1 1 auto;justify-content:center}
+  .scrim{padding:0}
+  .panel{max-height:100%;height:100%;border-radius:0;border:0}
+  .panel-head h2{font-size:22px}
+  .panel form{padding:16px}
+  .panel-foot{padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px))}
+  .panel-foot > .row{width:100%}
+  .panel-foot > .row .btn{flex:1 1 auto;justify-content:center}
+  .photo{grid-template-columns:1fr}
+  .photo .prev{width:150px}
+  .panel.view .photo{grid-template-columns:1fr}
+  .sl-title{font-size:26px}
+  .sl-forms .sl-select{flex:1 1 45%}
+  .sl-forms .btn{flex:1 1 45%;justify-content:center}
+  .pk-box,.crop-box{max-height:calc(100% - 10px)}
+  .cropper,.picker{padding:8px}
+}
+.picker{position:fixed;inset:0;z-index:25;background:rgba(4,3,8,.75);backdrop-filter:blur(3px);display:grid;place-items:center;padding:16px}
+.pk-box{width:min(520px,100%);max-height:min(640px,calc(100% - 20px));background:var(--surface);border:1px solid var(--line-2);border-radius:14px;box-shadow:var(--shadow),0 0 40px var(--accent-soft);padding:16px;display:flex;flex-direction:column;gap:12px}
+.pk-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.pk-head h3{font-family:var(--display);font-size:26px;text-transform:uppercase;margin:4px 0 0;line-height:1}
+.pk-list{overflow-y:auto;display:flex;flex-direction:column;gap:6px;min-height:80px}
+.pk-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);cursor:pointer;text-align:left;width:100%}
+.pk-item:hover{border-color:var(--accent);background:var(--accent-soft)}
+.pk-item .t{flex:1;min-width:0;display:flex;flex-direction:column}
+.pk-item .t b{font-weight:600}
+.pk-item .t span{font-size:12px;color:var(--ink-2)}
+.pk-item .add{font-size:12px;color:var(--accent-2);font-weight:600;white-space:nowrap}
+.pk-item[disabled]{opacity:.45;cursor:default;background:var(--bg);border-color:var(--line)}
+@media (prefers-reduced-motion:reduce){.skel{animation:none}.card,.btn{transition:none}.card:hover{transform:none}}
+</style>
+<script>try{ if (localStorage.getItem('ba_mode') === 'light') document.documentElement.setAttribute('data-mode','light'); }catch(e){}</script>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header class="top">
+    <svg class="pitch" viewBox="0 0 360 220" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+      <rect x="20" y="20" width="420" height="260" rx="2"/>
+      <line x1="180" y1="20" x2="180" y2="280"/>
+      <circle cx="180" cy="150" r="52"/>
+      <circle cx="180" cy="150" r="3" fill="currentColor"/>
+      <rect x="20" y="80" width="62" height="140"/>
+      <rect x="20" y="118" width="22" height="64"/>
+      <path d="M82 118a44 44 0 0 1 0 64"/>
+    </svg>
+    <div class="head-txt">
+      <div class="eyebrow">Observação técnica · Anderson Batatais</div>
+      <h1>Banco de <span>Atletas</span></h1>
+      <div class="sub" id="sub">Carregando a base…</div>
+    </div>
+    <div class="actions">
+      <button class="btn mode-btn" id="btnMode" type="button" aria-label="Alternar modo claro e escuro" title="Modo claro / escuro">
+        <svg class="i-moon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        <svg class="i-sun" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <span id="btnModeTxt">Modo claro</span>
+      </button>
+      <button class="btn sl-toggle" id="btnSL" type="button" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h18M12 3v18"/><circle cx="12" cy="12" r="3"/></svg>
+        <span id="btnSLtxt">Shortlist</span>
+      </button>
+      <button class="btn" id="btnBackup" type="button" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+        Backup
+      </button>
+      <button class="btn" id="btnExport" type="button" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+        Exportar Excel
+      </button>
+      <button class="btn primary" id="btnNew" type="button" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        Cadastrar atleta
+      </button>
+    </div>
+  </header>
+
+  <div id="dbView">
+  <div class="comps" id="comps" role="group" aria-label="Filtrar por competição"></div>
+  <div class="strip-cap" id="stripCap"></div>
+  <div class="strip" id="strip" aria-label="Atletas por posição"></div>
+
+  <div class="toolbar">
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Buscar por nome, clube ou característica" aria-label="Buscar">
+    </div>
+    <select id="fStatus" aria-label="Filtrar por status"><option value="">Todos os status</option></select>
+    <select id="fSort" aria-label="Ordenar">
+      <option value="nome">Ordenar: nome</option>
+      <option value="pos">Ordenar: posição</option>
+      <option value="clube">Ordenar: clube</option>
+      <option value="comp">Ordenar: competição</option>
+      <option value="idade">Ordenar: idade</option>
+      <option value="recente">Ordenar: mais recentes</option>
+    </select>
+    <div class="seg" role="group" aria-label="Modo de exibição">
+      <button type="button" id="vCards" aria-pressed="true" title="Cartões"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+      <button type="button" id="vTable" aria-pressed="false" title="Tabela"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+    </div>
+    <span class="count" id="count"></span>
+  </div>
+
+  <div id="msg"></div>
+  <main id="list"><div class="grid"><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div></main>
+  </div>
+
+  <section id="slView" hidden aria-label="Shortlist">
+    <div class="sl-head">
+      <div class="sl-titles">
+        <input id="slTitle" class="sl-title" value="Shortlist" aria-label="Título da shortlist" maxlength="80">
+        <div class="sl-sub" id="slSub">Por posição</div>
+      </div>
+      <div class="sl-forms">
+        <label class="lbl-c" for="slForms">Sistema de jogo</label>
+        <select id="slForms" class="sl-select"></select>
+        <select id="slSaved" class="sl-select" aria-label="Abrir shortlist salva"><option value="">Shortlists salvas</option></select>
+        <button type="button" class="btn primary" id="btnSaveSL">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+          Salvar shortlist
+        </button>
+        <button type="button" class="btn" id="btnPDF">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 12v6M9 15l3 3 3-3"/></svg>
+          Exportar PDF
+        </button>
+      </div>
+    </div>
+    <div class="sl-msg" id="slMsg"></div>
+    <div class="pitchv" id="slPitch">
+      <svg class="pitchv-lines" viewBox="0 0 68 105" preserveAspectRatio="none" aria-hidden="true">
+        <rect x="1" y="1" width="66" height="103" rx=".5"/><line x1="1" y1="52.5" x2="67" y2="52.5"/><ellipse cx="34" cy="52.5" rx="9.15" ry="9.15"/>
+        <rect x="13.85" y="1" width="40.3" height="16.5"/><rect x="24.85" y="1" width="18.3" height="5.5"/>
+        <rect x="13.85" y="87.5" width="40.3" height="16.5"/><rect x="24.85" y="98.5" width="18.3" height="5.5"/>
+      </svg>
+      <div class="sl-rows" id="slRows"></div>
+    </div>
+  </section>
+</div>
+
+<div class="picker" id="bkDlg" hidden role="dialog" aria-modal="true" aria-labelledby="bkTitle">
+  <div class="pk-box" style="width:min(480px,100%)">
+    <div class="pk-head"><div><div class="eyebrow">Dados e fotos</div><h3 id="bkTitle">Backup</h3></div><button type="button" class="btn" id="bkClose">Fechar</button></div>
+    <div class="hint" style="margin:0">O backup (.zip) leva todos os atletas, fotos, timeline e shortlists. Use para guardar uma cópia ou levar os dados para outra instalação do sistema (por exemplo, a versão publicada na Vercel).</div>
+    <div class="row"><button type="button" class="btn primary" id="bkExport">Exportar backup (.zip)</button><button type="button" class="btn" id="bkImportBtn">Importar backup</button><input type="file" id="bkFile" accept=".zip,application/zip" hidden></div>
+    <div id="bkConfirm"></div>
+    <div class="hint" id="bkState" style="margin:0"></div>
+  </div>
+</div>
+
+<div class="picker" id="saveDlg" hidden role="dialog" aria-modal="true" aria-labelledby="svTitle">
+  <div class="pk-box" style="width:min(460px,100%)">
+    <div class="pk-head"><div><div class="eyebrow">Salvar shortlist</div><h3 id="svTitle">Janela de contratação</h3></div><button type="button" class="btn" id="svClose">Fechar</button></div>
+    <div class="fs">
+      <div class="f"><label for="svNome">Janela</label>
+        <select id="svNome"><option>Planejamento inicial</option><option>Primeira janela</option><option>Segunda janela</option><option>Janela extra</option></select></div>
+      <div class="f s3"><label for="svIni">Início</label><input id="svIni" type="date"></div>
+      <div class="f s3"><label for="svFim">Fim</label><input id="svFim" type="date"></div>
+    </div>
+    <div class="hint" style="margin:0">A shortlist atual é salva com esta janela. Salvar de novo na mesma janela atualiza a versão salva.</div>
+    <div class="hint" id="svErr" role="alert" style="color:var(--danger);margin:0"></div>
+    <div class="row" style="justify-content:flex-end"><button type="button" class="btn" id="svCancel">Cancelar</button><button type="button" class="btn primary" id="svOk">Salvar</button></div>
+  </div>
+</div>
+
+<div class="picker" id="picker" hidden role="dialog" aria-modal="true" aria-labelledby="pkTitle">
+  <div class="pk-box">
+    <div class="pk-head">
+      <div><div class="eyebrow" id="pkEyebrow">Adicionar jogador</div><h3 id="pkTitle">Zagueiro</h3><div class="hint" id="pkHint" style="margin:2px 0 0"></div></div>
+      <button type="button" class="btn" id="pkClose">Fechar</button>
+    </div>
+    <div class="toolbar" style="margin:0"><div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="pkQ" type="search" placeholder="Buscar por nome ou clube" aria-label="Buscar atleta"></div></div>
+    <div class="pk-list" id="pkList"></div>
+  </div>
+</div>
+
+<div class="scrim" id="scrim" hidden>
+  <aside class="panel" role="dialog" aria-modal="true" aria-labelledby="edTitle">
+    <div class="panel-head">
+      <div><div class="eyebrow"><span id="edEyebrow">Novo cadastro</span><span class="mode-tag" id="modeTag">Visualização</span></div><h2 id="edTitle">Cadastrar atleta</h2></div>
+      <button class="btn" type="button" id="edClose" aria-label="Fechar">Fechar</button>
+    </div>
+    <form id="form" novalidate>
+     <fieldset id="edFs" class="edfs">
+      <div class="section-t">Foto</div>
+      <div class="photo">
+        <div class="prev" id="phPrev"></div>
+        <div id="phCtrls">
+          <div class="tabs" role="tablist">
+            <button type="button" role="tab" id="tabUp" aria-selected="true">Enviar arquivo</button>
+            <button type="button" role="tab" id="tabLink" aria-selected="false">Usar link</button>
+          </div>
+          <div id="paneUp">
+            <label class="drop" id="drop" for="fileIn">
+              <strong>Escolha uma imagem</strong> ou arraste aqui<br><span class="hint">JPG, PNG ou WEBP. A imagem é redimensionada para 800 px.</span>
+            </label>
+            <input type="file" id="fileIn" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+            <div class="hint" id="upState"></div>
+          </div>
+          <div id="paneLink" hidden>
+            <div class="f"><label for="fotoLink">Link da foto</label><input id="fotoLink" type="url" placeholder="https://…"></div>
+            <div class="row" style="margin-top:8px"><a class="btn" id="openLink" href="#" target="_blank" rel="noopener" hidden>Abrir link em nova aba</a></div>
+            <div class="drop" id="pasteBox" tabindex="0" role="button" aria-label="Colar imagem copiada" style="margin-top:10px">
+              <strong>Cole a imagem aqui</strong> (Ctrl+V ou ⌘+V)<br><span class="hint">Abra o link, clique com o botão direito na foto, escolha “Copiar imagem” e cole aqui. A foto passa pelo recorte e fica salva no sistema.</span>
+            </div>
+            <div class="hint">Por segurança, a página não consegue baixar imagens de outros sites sozinha. Por isso a foto do link precisa ser copiada e colada. O link continua salvo no cadastro e vai para o Excel como referência.</div>
+            <div class="hint" id="pasteState"></div>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <button type="button" class="btn" id="phCrop" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>Ajustar recorte</button>
+            <button type="button" class="btn danger" id="phRemove">Remover foto</button>
+            <span class="hint" id="refLink"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-t">Dados do atleta</div>
+      <div class="fs">
+        <div class="f s4"><label for="nome">Nome <span class="req">*</span></label><input id="nome" required autocomplete="off"></div>
+        <div class="f s2"><label for="idade">Idade</label><input id="idade" type="number" min="12" max="50" inputmode="numeric"></div>
+        <div class="f s2"><label for="posicao">Posição principal <span class="req">*</span></label><select id="posicao" required></select></div>
+        <div class="f s2"><label for="posicao2">Posição secundária</label><select id="posicao2"></select></div>
+        <div class="f s2"><label for="posicao3">Posição terciária</label><select id="posicao3"></select></div>
+        <div class="f s3"><label for="clube">Clube <span class="req">*</span></label><input id="clube" list="dlClube" required autocomplete="off"></div>
+        <div class="f s3"><label for="competicao">Competição <span class="req">*</span></label><input id="competicao" list="dlComp" required autocomplete="off" placeholder="Ex.: Série B 2026"></div>
+        <div class="f s3"><label for="pe">Pé dominante</label>
+          <select id="pe"><option value=""></option><option>Destro</option><option>Canhoto</option><option>Ambidestro</option><option>A confirmar</option></select></div>
+        <div class="f s3"><label for="status">Status</label>
+          <select id="status"><option>Cadastrado</option><option>Em observação</option><option>Monitorar</option><option>Prioridade</option><option>Descartado</option></select></div>
+      </div>
+
+      <div class="section-t">Representação</div>
+      <div class="fs">
+        <div class="f s3"><label for="agente">Agente</label><input id="agente" autocomplete="off" placeholder="Nome do agente ou empresa"></div>
+        <div class="f s3"><label for="contato">Número de contato</label><input id="contato" type="tel" inputmode="tel" autocomplete="off" placeholder="(85) 99999-9999"></div>
+      </div>
+
+      <div class="section-t">Campograma</div>
+      <div class="cg-wrap">
+        <div class="cg-bar">
+          <span class="lbl">Clique no campo define:</span>
+          <div class="seg" role="group" aria-label="Qual posição o clique define" id="cgMode">
+            <button type="button" data-m="1" aria-pressed="true">Principal</button><button type="button" data-m="2" aria-pressed="false">Secundária</button><button type="button" data-m="3" aria-pressed="false">Terciária</button>
+          </div>
+        </div>
+        <div id="cg"></div>
+        <div class="cg-legend"><span><i class="lg l1"></i>Principal</span><span><i class="lg l2"></i>Secundária</span><span><i class="lg l3"></i>Terciária</span></div>
+      </div>
+
+      <div class="section-t">Avaliação</div>
+      <div class="fs">
+        <div class="f"><label for="fortes">Pontos fortes / Características</label><textarea id="fortes"></textarea></div>
+        <div class="f"><label for="melhorar">Pontos a melhorar</label><textarea id="melhorar"></textarea></div>
+        <div class="f"><label for="obs">Observações</label><textarea id="obs"></textarea></div>
+        <div class="f motivo" id="motivoWrap" hidden><label for="motivo">Motivo do descarte *</label><textarea id="motivo" placeholder="Explique por que o atleta foi descartado. O texto entra nas observações e na timeline."></textarea></div>
+      </div>
+     </fieldset>
+
+      <div class="section-t">Timeline de status</div>
+      <div id="timeline"></div>
+
+      <div id="dupZone"></div>
+      <div class="hint" id="formErr" role="alert" style="color:var(--danger)"></div>
+    </form>
+    <div class="panel-foot">
+      <div id="delZone"><button type="button" class="btn danger" id="btnDel">Excluir atleta</button></div>
+      <div class="row"><button type="button" class="btn" id="btnCancel">Fechar</button><button type="button" class="btn" id="btnAthPDF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 12v6M9 15l3 3 3-3"/></svg>Gerar PDF</button><button type="button" class="btn" id="btnEdit" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Editar</button><button type="button" class="btn primary" id="btnSave">Salvar cadastro</button></div>
+    </div>
+  </aside>
+</div>
+
+<datalist id="dlClube"></datalist>
+<datalist id="dlComp"></datalist>
+<div class="cropper" id="cropper" hidden role="dialog" aria-modal="true" aria-labelledby="crTitle">
+  <div class="crop-box">
+    <div><h3 id="crTitle">Ajustar recorte</h3><div class="hint">Arraste a foto para posicionar. Use o zoom para aproximar ou afastar; o espaço que sobrar fica com fundo branco.</div></div>
+    <div class="crop-view" id="crView"><img id="crImg" alt="Foto a recortar" draggable="false"><div class="crop-grid"></div></div>
+    <div class="crop-zoom">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M8 11h6M20 20l-3.5-3.5"/></svg>
+      <input type="range" id="crZoom" min="0.4" max="4" step="0.01" value="1" aria-label="Zoom">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M8 11h6M11 8v6M20 20l-3.5-3.5"/></svg>
+    </div>
+    <div class="crop-actions">
+      <button type="button" class="btn" id="crReset">Centralizar</button>
+      <div class="row"><button type="button" class="btn" id="crCancel">Cancelar</button><button type="button" class="btn primary" id="crApply">Aplicar recorte</button></div>
+    </div>
+    <div class="hint" id="crState" style="margin:0"></div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const GROUPS = [
+  {k:'gk',  l:'Goleiros',  m:/goleir/i},
+  {k:'zag', l:'Zagueiros', m:/zagueir/i},
+  {k:'lat', l:'Laterais',  m:/lateral|ala/i},
+  {k:'vol', l:'Volantes',  m:/volante/i},
+  {k:'mei', l:'Meias',     m:/meia/i},
+  {k:'ext', l:'Extremos',  m:/extremo|ponta/i},
+  {k:'ata', l:'Atacantes', m:/atacante|centroavante/i},
+];
+const ORDER = {gk:0,zag:1,lat:2,vol:3,mei:4,ext:5,ata:6,out:7};
+const SING = {gk:'Goleiro',zag:'Zagueiro',lat:'Lateral / Ala',vol:'Volante',mei:'Meia',ext:'Extremo',ata:'Atacante',out:'Outra'};
+const ABBR = {gk:'GOL',zag:'ZAG',lat:'LAT',vol:'VOL',mei:'MEI',ext:'EXT',ata:'ATA',out:'—'};
+const groupsOf = p => { const r = GROUPS.filter(g => g.m.test(p||'')).map(g=>g.k); return r; };
+const group = p => { const g = GROUPS.find(g => g.m.test(p||'')); return g ? g.k : 'out'; };
+const colorOf = k => `var(--${k})`;
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const initials = n => (n||'?').replace(/\(.*?\)/g,'').trim().split(/\s+/).filter(Boolean).map(w=>w[0]).filter((_,i,a)=>i===0||i===a.length-1).join('').toUpperCase();
+const photoSrc = a => a.fotoAsset ? '/_blob/' + a.fotoAsset : (a.foto || '');
+const norm = s => (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+
+let db = null, assets = null, downloads = null;
+let athletes = [];
+let state = { q:'', clube:'', status:'', grp:'', comp:'', sort:'nome', view:'cards' };
+const DEFAULT_COMPS = ['Série A 2026','Série B 2026','Série C 2026','Série D 2026','Copa do Brasil 2026','Copa do Nordeste 2026','Campeonato Cearense 2026','Libertadores 2026','Sul-Americana 2026'];
+const compOf = a => a.competicao || 'Sem competição';
+const COMP_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>';
+try { const v = localStorage.getItem('ba_view'); if (v) state.view = v; } catch(e){}
+
+function toast(t){ const el=$('#toast'); el.textContent=t; el.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(()=>el.hidden=true,3200); }
+
+function photoHTML(a, cls){
+  const src = photoSrc(a);
+  const ini = `<span class="initials">${esc(initials(a.nome))}</span>`;
+  if (!src) return ini;
+  return ini + `<img src="${esc(src)}" alt="" loading="lazy" onerror="this.remove()">`;
+}
+
+/* ---------- Render ---------- */
+function filtered(){
+  const q = norm(state.q);
+  let r = athletes.filter(a =>
+    (!state.comp || compOf(a) === state.comp) &&
+    (!state.clube || a.clube === state.clube) &&
+    (!state.status || (a.status||'Cadastrado') === state.status) &&
+    (!state.grp || group(a.posicao) === state.grp) &&
+    (!q || norm([a.nome,a.clube,a.posicao,a.posicao2,a.posicao3,a.competicao,a.agente,a.contato,a.fortes,a.melhorar,a.obs].join(' ')).includes(q)));
+  const by = {
+    nome:(a,b)=>a.nome.localeCompare(b.nome,'pt'),
+    pos:(a,b)=>ORDER[group(a.posicao)]-ORDER[group(b.posicao)]||a.nome.localeCompare(b.nome,'pt'),
+    comp:(a,b)=>compOf(a).localeCompare(compOf(b),'pt')||a.nome.localeCompare(b.nome,'pt'),
+    clube:(a,b)=>(a.clube||'').localeCompare(b.clube||'','pt')||a.nome.localeCompare(b.nome,'pt'),
+    idade:(a,b)=>(a.idade??99)-(b.idade??99),
+    recente:(a,b)=>(b.atualizadoEm||'').localeCompare(a.atualizadoEm||''),
+  }[state.sort];
+  return r.sort(by);
+}
+
+// Funções do campograma (ataque para a direita: esquerda = parte de cima)
+const POS_LIST = [
+  {n:'Goleiro',                g:'gk',  s:'', x:9,   y:40, l:'GOL'},
+  {n:'Zagueiro pela direita',  g:'zag', s:'d', x:28,  y:55, l:'ZD'},
+  {n:'Zagueiro pela esquerda', g:'zag', s:'e', x:28,  y:25, l:'ZE'},
+  {n:'Zagueiro central',       g:'zag', s:'c', x:24,  y:40, l:'ZC'},
+  {n:'Lateral direita',        g:'lat', s:'d', x:34,  y:69, l:'LD'},
+  {n:'Lateral esquerda',       g:'lat', s:'e', x:34,  y:11, l:'LE'},
+  {n:'Ala pela direita',       g:'lat', s:'d', x:55,  y:70, l:'AD'},
+  {n:'Ala pela esquerda',      g:'lat', s:'e', x:55,  y:10, l:'AE'},
+  {n:'Volante direita',        g:'vol', s:'d', x:50,  y:53, l:'VD'},
+  {n:'Volante esquerda',       g:'vol', s:'e', x:50,  y:27, l:'VE'},
+  {n:'Volante central',        g:'vol', s:'c', x:45,  y:40, l:'VC'},
+  {n:'Meia',                   g:'mei', s:'', x:70,  y:40, l:'MEI'},
+  {n:'Meia pela direita',      g:'mei', s:'d', x:68,  y:58, l:'MD'},
+  {n:'Meia pela esquerda',     g:'mei', s:'e', x:68,  y:22, l:'ME'},
+  {n:'Meia atacante pela direita',  g:'mei', s:'d', x:80, y:53, l:'MAD'},
+  {n:'Meia atacante pela esquerda', g:'mei', s:'e', x:80, y:27, l:'MAE'},
+  {n:'Meia atacante central',       g:'mei', s:'c', x:90, y:40, l:'MAC'},
+  {n:'Extremo pela direita',   g:'ext', s:'d', x:89,  y:67, l:'ED'},
+  {n:'Extremo pela esquerda',  g:'ext', s:'e', x:89,  y:13, l:'EE'},
+  {n:'Atacante central',       g:'ata', s:'c', x:105, y:40, l:'AC'},
+  {n:'Atacante pela direita',  g:'ata', s:'d', x:101, y:57, l:'ATD'},
+  {n:'Atacante pela esquerda', g:'ata', s:'e', x:101, y:22, l:'ATE'},
+];
+const sideOf = p => /direit/.test(p) && !/esquerd/.test(p) ? 'd' : /esquerd/.test(p) && !/direit/.test(p) ? 'e' : /central/.test(p) ? 'c' : '';
+function spotsOf(pos){
+  const p = norm(pos||''); if (!p) return new Set();
+  const exact = POS_LIST.find(q => norm(q.n) === p);
+  if (exact) return new Set([exact]);
+  const gs = groupsOf(pos), side = sideOf(p);
+  return new Set(POS_LIST.filter(q => gs.includes(q.g) && (!side || !q.s || q.s === side)));
+}
+// ks: '' = todos; array de grupos (cartões de estatística) | opts.positions: [principal, secundária, terciária]
+function pitchSVG(ks, opts={}){
+  let levelOf;
+  if (opts.positions){
+    const sets = opts.positions.map(spotsOf);
+    levelOf = q => sets[0].has(q) ? 1 : sets[1] && sets[1].has(q) ? 2 : sets[2] && sets[2].has(q) ? 3 : 0;
+  } else {
+    const all = ks === '' ? null : (Array.isArray(ks) ? ks : [ks]);
+    levelOf = q => !all ? -1 : all.includes(q.g) ? 1 : 0;
+  }
+  const dots = POS_LIST.map(q => {
+    const {x,y} = q, lv = levelOf(q);
+    const c = lv > 0 ? ` style="--c:${colorOf(q.g)}"` : '';
+    let dot;
+    if (lv === 1) dot = `<circle class="halo" cx="${x}" cy="${y}" r="8"${c}/><circle class="on" cx="${x}" cy="${y}" r="3.6"${c}/>`;
+    else if (lv === 2) dot = `<circle class="on2" cx="${x}" cy="${y}" r="3.2"${c}/>`;
+    else if (lv === 3) dot = `<circle class="on3" cx="${x}" cy="${y}" r="3"${c}/>`;
+    else if (lv === -1) dot = `<circle class="on" cx="${x}" cy="${y}" r="3.6"/>`;
+    else dot = `<circle class="off" cx="${x}" cy="${y}" r="2.6"/>`;
+    if (!opts.interactive) return dot;
+    return `<g class="pick" data-pick="${q.n}" role="button" aria-label="${q.n}"><title>${q.n}</title><circle cx="${x}" cy="${y}" r="7" fill="transparent"/>${dot}<text class="lab${lv>0?' on-t':''}" x="${x}" y="${y+8.5}">${q.l}</text></g>`;
+  }).join('');
+  return `<svg class="${opts.cls||'pitchmini'}" viewBox="0 0 120 80" aria-hidden="${opts.interactive?'false':'true'}">
+    <rect class="ln" x="3" y="3" width="114" height="74" rx="1.5"/><line class="ln" x1="60" y1="3" x2="60" y2="77"/>
+    <circle class="ln" cx="60" cy="40" r="10"/><rect class="ln" x="3" y="22" width="16" height="36"/><rect class="ln" x="3" y="32" width="6" height="16"/>
+    <rect class="ln" x="101" y="22" width="16" height="36"/><rect class="ln" x="111" y="32" width="6" height="16"/>${dots}</svg>`;
+}
+function fillPosSelect(cur, id='posicao'){
+  cur = cur || '';
+  const known = POS_LIST.some(q => q.n === cur);
+  $('#'+id).innerHTML = `<option value="">${id==='posicao'?'Selecione a função':'Nenhuma'}</option>` +
+    (cur && !known ? `<option value="${esc(cur)}">${esc(cur)} (cadastro antigo)</option>` : '') +
+    POS_LIST.map(q => `<option>${q.n}</option>`).join('');
+  $('#'+id).value = cur;
+}
+const POS_ICON = {
+  all: '<circle cx="12" cy="7" r="2.6"/><path d="M7.5 20v-3.2a4.5 4.5 0 0 1 9 0V20"/><circle cx="5" cy="9.5" r="2"/><path d="M1.8 19v-2a3.2 3.2 0 0 1 4.4-3"/><circle cx="19" cy="9.5" r="2"/><path d="M22.2 19v-2a3.2 3.2 0 0 0-4.4-3"/>',
+  gk:  '<path d="M7 21v-6.2L4.4 10.6a1.5 1.5 0 0 1 2.5-1.7L9 11.5V4.8a1.5 1.5 0 0 1 3 0V10V3.8a1.5 1.5 0 0 1 3 0V10V5.3a1.5 1.5 0 0 1 3 0V14a7 7 0 0 1-2.6 5.4V21z"/><path d="M7 18h8.6"/>',
+  zag: '<path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.3 7.5 9.5 4.3-1.2 7.5-4.9 7.5-9.5V6z"/><path d="M12 3v18M4.6 11.5h14.8"/>',
+  lat: '<path d="M4 3v18"/><path d="M8 20c7 0 11-5 11-13"/><path d="m16 9.5 3-3 3 3"/>',
+  vol: '<circle cx="12" cy="12" r="3"/><path d="M3 12h5.5M15.5 12H21"/><path d="m5.5 9.5-2.5 2.5 2.5 2.5M18.5 9.5 21 12l-2.5 2.5"/><path d="M12 3v5.5M12 15.5V21"/>',
+  mei: '<circle cx="5" cy="17.5" r="2.2"/><circle cx="12" cy="5.5" r="2.2"/><circle cx="19" cy="15" r="2.2"/><path d="M6.2 15.6 10.8 7.4M13.3 7.3l4.5 5.8M7.2 17.1l9.6-1.7"/>',
+  ext: '<path d="M13.5 2 4.5 13.5h6.5L10 22l9-11.5h-6.5z"/>',
+  ata: '<path d="M2.5 20V5.5h19V20"/><path d="M6.5 5.5V20M17.5 5.5V20M2.5 10h19M2.5 15h4M17.5 15h4" opacity=".35"/><circle cx="12" cy="15.5" r="3.4"/><path d="m12 13.6 1.8 1.3-.7 2h-2.2l-.7-2z" opacity=".8"/>',
+  out: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/>'
+};
+function statCard(k, label, n, total){
+  const pct = total ? Math.round(n/total*100) : 0;
+  const c = k ? colorOf(k) : 'var(--accent)';
+  return `<button type="button" class="stat" data-g="${k}" style="--c:${c}" aria-pressed="${state.grp===k}">
+    <span class="info"><span class="top"><span class="n">${n}</span><span class="pct">${k ? pct+'%' : 'total'}</span></span>
+    <span class="l">${label}</span><span class="bar"><i style="width:${k?pct:100}%"></i></span></span></button>`;
+}
+function renderStrip(){
+  const base = athletes.filter(a => !state.comp || compOf(a) === state.comp);
+  const counts = {}; base.forEach(a => { const g=group(a.posicao); counts[g]=(counts[g]||0)+1; });
+  const cells = [statCard('', 'Todos', base.length, base.length)]
+    .concat(GROUPS.map(g => statCard(g.k, g.l, counts[g.k]||0, base.length)));
+  if (counts.out) cells.push(statCard('out', 'Outras', counts.out, base.length));
+  $('#strip').innerHTML = cells.join('');
+  $('#stripCap').innerHTML = `Atletas por posição · <b>${esc(state.comp || 'Todas as competições')}</b>`;
+}
+
+function renderComps(){
+  const m = {}; athletes.forEach(a => { const c = compOf(a); m[c]=(m[c]||0)+1; });
+  const list = Object.keys(m).sort((a,b)=>a.localeCompare(b,'pt'));
+  if (state.comp && !m[state.comp]) state.comp = '';
+  if (!$('#fComp')) $('#comps').innerHTML = `<label class="lbl-c" for="fComp">Competição</label><select id="fComp" class="comp-sel"></select>`;
+  const sel = $('#fComp');
+  sel.innerHTML = `<option value="">Todas as competições (${athletes.length})</option>` + list.map(c => `<option value="${esc(c)}">${esc(c)} (${m[c]})</option>`).join('');
+  sel.value = state.comp;
+  sel.classList.toggle('on', !!state.comp);
+  $('#dlComp').innerHTML = [...new Set(list.filter(c=>c!=='Sem competição').concat(DEFAULT_COMPS))].map(c=>`<option>${esc(c)}</option>`).join('');
+}
+function renderFilters(){
+  const clubes = [...new Set(athletes.map(a=>a.clube).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt'));
+  const sts = [...new Set(athletes.map(a=>a.status||'Cadastrado'))].sort();
+  const fill = (sel, arr, first) => { const cur = sel.value; sel.innerHTML = `<option value="">${first}</option>` + arr.map(v=>`<option>${esc(v)}</option>`).join(''); sel.value = arr.includes(cur)?cur:''; };
+  fill($('#fStatus'), sts, 'Todos os status');
+  $('#dlClube').innerHTML = clubes.map(c=>`<option>${esc(c)}</option>`).join('');
+  const nComp = new Set(athletes.map(compOf)).size;
+  $('#sub').textContent = `${athletes.length} atletas · ${clubes.length} clubes · ${nComp} ${nComp===1?'competição':'competições'}`;
+}
+
+const ST_ICON = {
+  'cadastrado':    '<path d="M9 4h6v3H9z"/><path d="M15 5h3v16H6V5h3"/><path d="m9 13 2 2 4-4"/>',
+  'em-observacao': '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  'monitorar':     '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><path d="M12 12 19 5"/>',
+  'prioridade':    '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" fill="currentColor"/>',
+  'descartado':    '<circle cx="12" cy="12" r="9"/><path d="m9 9 6 6M15 9l-6 6"/>',
+};
+function statusPill(s){
+  s = s||'Cadastrado'; const k = norm(s).replace(/\s+/g,'-');
+  const ic = ST_ICON[k] || ST_ICON['cadastrado'];
+  return `<span class="pill s-${k}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ic}</svg>${esc(s)}</span>`;
+}
+
+function renderList(){
+  const r = filtered();
+  $('#count').textContent = `${r.length} de ${athletes.length}`;
+  $('#vCards').setAttribute('aria-pressed', state.view==='cards'); $('#vTable').setAttribute('aria-pressed', state.view==='table');
+  if (!r.length){ $('#list').innerHTML = `<div class="empty">${athletes.length ? 'Nenhum atleta com esses filtros.' : 'A base está vazia. Use “Cadastrar atleta” para incluir o primeiro.'}</div>`; return; }
+  if (state.view === 'cards'){
+    $('#list').innerHTML = `<div class="grid">${r.map(a => { const g=group(a.posicao); return `
+      <button type="button" class="card" data-id="${esc(a.id)}" style="--c:${colorOf(g)}">
+        <div class="ph">${photoHTML(a)}<span class="chip pos" style="--c:${colorOf(g)}">${ABBR[g]}</span><span class="cchip comp" title="${esc(compOf(a))}">${COMP_ICON}${esc(compOf(a))}</span><div class="nm">${esc(a.nome)}</div></div>
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="meta"><span><b>${esc(a.clube||'—')}</b></span><span>${esc(a.posicao||'')}</span></div>
+          <div class="meta"><span>${a.idade!=null&&a.idade!==''?`<b>${esc(a.idade)}</b> anos`:'Idade —'}</span><span>${esc(a.pe||'Pé a confirmar')}</span></div>
+          ${a.fortes?`<div class="tr">${esc(a.fortes)}</div>`:''}
+          <div class="foot">${statusPill(a.status)}${pitchSVG(null,{cls:'pitchxs',positions:[a.posicao,a.posicao2,a.posicao3]})}</div>
+        </div>
+      </button>`; }).join('')}</div>`;
+  } else {
+    $('#list').innerHTML = `<div class="tablewrap"><table><thead><tr>
+      <th data-s="nome">Atleta</th><th data-s="idade">Idade</th><th data-s="pos">Posição</th><th data-s="comp" class="c-comp">Competição</th><th class="c-pe">Pé</th><th class="c-tx">Pontos fortes</th><th>Status</th></tr></thead><tbody>
+      ${r.map(a => { const g=group(a.posicao); return `<tr data-id="${esc(a.id)}" style="--c:${colorOf(g)}">
+        <td><div class="who"><span class="thumb big">${photoHTML(a)}</span><div class="who-t"><span class="nm-t">${esc(a.nome)}</span><span class="club-t">${esc(a.clube||'—')}</span></div></div></td>
+        <td class="num">${esc(a.idade??'')}</td>
+        <td class="posc"><div class="pos-main"><span class="chip" style="--c:${colorOf(g)}">${ABBR[g]}</span> ${SING[g]}</div>${[a.posicao,a.posicao2,a.posicao3].map((p,i)=>p?`<div class="fn"><b>${i+1}ª</b> ${esc(p)}</div>`:'').join('')}</td>
+        <td class="c-comp"><span class="cchip">${esc(compOf(a))}</span></td><td class="c-pe">${esc(a.pe||'')}</td>
+        <td class="tx c-tx">${esc(a.fortes||'')}</td><td>${statusPill(a.status)}</td></tr>`; }).join('')}
+      </tbody></table></div>`;
+  }
+}
+function renderAll(){ renderComps(); renderStrip(); renderFilters(); renderList(); renderSL(); }
+
+/* ---------- Events ---------- */
+$('#comps').addEventListener('change', e => { if (e.target.id !== 'fComp') return; state.comp = e.target.value; renderComps(); renderStrip(); renderList(); });
+$('#strip').addEventListener('click', e => { const b=e.target.closest('button'); if(!b) return; state.grp=b.dataset.g; renderStrip(); renderList(); });
+$('#q').addEventListener('input', e => { state.q=e.target.value; renderList(); });
+$('#fStatus').addEventListener('change', e => { state.status=e.target.value; renderList(); });
+$('#fSort').addEventListener('change', e => { state.sort=e.target.value; renderList(); });
+const setView = v => { state.view=v; try{localStorage.setItem('ba_view',v)}catch(e){} renderList(); };
+$('#vCards').onclick = () => setView('cards'); $('#vTable').onclick = () => setView('table');
+$('#list').addEventListener('click', e => {
+  const th = e.target.closest('th[data-s]'); if (th){ state.sort=th.dataset.s; $('#fSort').value=state.sort; renderList(); return; }
+  const el = e.target.closest('[data-id]'); if (el) openEditor(athletes.find(a=>a.id===el.dataset.id));
+});
+
+/* ---------- Editor ---------- */
+let editing = null;       // athlete being edited (or null for new)
+let photo = null;         // {asset?:id, link?:url, preview:url, pendingOldAsset?:id}
+let uploading = false;
+
+function setTab(t){
+  $('#tabUp').setAttribute('aria-selected', t==='up'); $('#tabLink').setAttribute('aria-selected', t==='link');
+  $('#paneUp').hidden = t!=='up'; $('#paneLink').hidden = t!=='link';
+}
+$('#tabUp').onclick = () => setTab('up'); $('#tabLink').onclick = () => setTab('link');
+
+let cgMode = '1';
+function renderCG(){ $('#cg').innerHTML = pitchSVG(null, {cls:'pitchbig', interactive:true, positions:[$('#posicao').value,$('#posicao2').value,$('#posicao3').value]}); }
+function renderPreview(){
+  renderCG();
+  const nome = $('#nome').value || (editing&&editing.nome) || '';
+  const g = group($('#posicao').value);
+  const box = $('#phPrev'); box.style.setProperty('--c', colorOf(g));
+  const src = photo && (photo.asset ? '/_blob/'+photo.asset : photo.link);
+  box.innerHTML = `<span class="initials">${esc(initials(nome)||'?')}</span>` + (src?`<img src="${esc(src)}" alt="Foto do atleta" onerror="this.remove()">`:'');
+  $('#phRemove').hidden = !src;
+  $('#phCrop').hidden = !(photo && photo.asset && assets);
+  const ref = editing && editing.fotoRef;
+  const ol = $('#openLink'); ol.hidden = !(photo && /^https?:\/\//i.test(photo.link||'')); if (!ol.hidden) ol.href = photo.link;
+  $('#refLink').innerHTML = (photo&&photo.link ? `<a href="${esc(photo.link)}" target="_blank" rel="noopener">Abrir link da foto</a> · ` : '') +
+    (ref ? `<a href="${esc(ref)}" target="_blank" rel="noopener">Buscar foto no Google</a>` : '');
+}
+
+let editMode = false, dupOK = false;
+function setEditMode(on){
+  editMode = on;
+  $('#edFs').disabled = !on;
+  document.querySelector('.panel').classList.toggle('view', !on);
+  $('#btnSave').disabled = !on;
+  $('#btnEdit').setAttribute('aria-pressed', on); $('#btnEdit').disabled = on; $('#btnEdit').hidden = !editing; $('#btnAthPDF').hidden = !editing || on;
+  $('#modeTag').textContent = on ? 'Editando' : 'Visualização';
+  updateMotivo();
+  if (on) setTimeout(()=>$('#nome').focus(), 30);
+}
+$('#btnEdit').onclick = () => setEditMode(true);
+function openEditor(a, opts={}){
+  editing = a || null; dupOK = false; $('#dupZone').innerHTML=''; $('#motivo').value='';
+  $('#form').reset(); $('#formErr').textContent=''; photoMsg('');
+  $('#edEyebrow').textContent = a ? 'Cadastro do atleta' : 'Novo cadastro';
+  $('#edTitle').textContent = a ? a.nome : 'Cadastrar atleta';
+  fillPosSelect(a && a.posicao); fillPosSelect(a && a.posicao2, 'posicao2'); fillPosSelect(a && a.posicao3, 'posicao3');
+  ['nome','idade','clube','competicao','pe','fortes','melhorar','obs','agente','contato'].forEach(k => $('#'+k).value = a && a[k]!=null ? a[k] : '');
+  if (!a) $('#competicao').value = state.comp && state.comp!=='Sem competição' ? state.comp : '';
+  $('#status').value = (a && a.status) || 'Cadastrado';
+  photo = a ? { asset:a.fotoAsset||null, orig:a.fotoOrig||null, crop:a.fotoCrop||null, link:a.foto||'' } : { asset:null, orig:null, crop:null, link:'' };
+  $('#fotoLink').value = photo.link || '';
+  setTab(assets ? (a && a.foto && !a.fotoAsset ? 'link' : 'up') : 'link');
+  $('#tabUp').hidden = !assets;
+  $('#delZone').innerHTML = a ? `<button type="button" class="btn danger" id="btnDel">Excluir atleta</button>` : '';
+  renderPreview();
+  renderTimeline(a);
+  $('#scrim').hidden = false; document.body.style.overflow='hidden';
+  $('.panel').scrollTop = 0;
+  setEditMode(!a || !!opts.edit);
+  if (opts.status){ $('#status').value = opts.status; updateMotivo(); }
+}
+function closeEditor(){ $('#scrim').hidden = true; document.body.style.overflow=''; editing=null; }
+$('#edClose').onclick = closeEditor; $('#btnCancel').onclick = closeEditor;
+$('#scrim').addEventListener('click', e => { if (e.target.id==='scrim') closeEditor(); });
+document.addEventListener('keydown', e => { if (e.key!=='Escape') return; if (!$('#cropper').hidden) { closeCropper(null); return; } if (!$('#scrim').hidden) closeEditor(); });
+$('#cg').addEventListener('click', e => { if (!editMode) return; const g=e.target.closest('[data-pick]'); if(!g) return; const id = cgMode==='1'?'posicao':'posicao'+cgMode; fillPosSelect($('#'+id).value===g.dataset.pick && cgMode!=='1' ? '' : g.dataset.pick, id); renderPreview(); });
+$('#cgMode').addEventListener('click', e => { const b=e.target.closest('button'); if(!b) return; cgMode=b.dataset.m; [...$('#cgMode').children].forEach(x=>x.setAttribute('aria-pressed', x===b)); });
+$('#posicao2').addEventListener('change', renderPreview); $('#posicao3').addEventListener('change', renderPreview);
+$('#nome').addEventListener('input', renderPreview); $('#posicao').addEventListener('change', renderPreview);
+$('#fotoLink').addEventListener('input', e => { photo.link = e.target.value.trim(); renderPreview(); });
+$('#phRemove').onclick = () => { photo = {asset:null, orig:null, crop:null, link:''}; $('#fotoLink').value=''; renderPreview(); };
+
+async function resizeImage(file, max){
+  const bmp = await createImageBitmap(file).catch(()=>null);
+  if (!bmp) return file;
+  const s = Math.min(1, max/Math.max(bmp.width,bmp.height));
+  const c = document.createElement('canvas'); c.width=Math.round(bmp.width*s); c.height=Math.round(bmp.height*s);
+  const cx = c.getContext('2d'); cx.fillStyle = '#FFFFFF'; cx.fillRect(0,0,c.width,c.height); cx.drawImage(bmp,0,0,c.width,c.height);
+  return await new Promise(r => c.toBlob(b => r(b||file), 'image/jpeg', 0.88));
+}
+const upErr = err => ({too_large:'Arquivo grande demais (limite 20 MB).',quota_or_state:'O espaço de fotos está cheio.',rate_limited:'Muitos envios seguidos. Aguarde alguns segundos.',unsupported_type:'Formato não aceito.'}[err&&err.code] || 'Não foi possível enviar a foto. Tente novamente.');
+
+/* ---------- Recorte ---------- */
+const CR = { w:0, h:0, z:1, cx:.5, cy:.4, resolve:null, drag:null };
+const crView = $('#crView'), crImg = $('#crImg');
+function crLayout(){
+  const V = crView.clientWidth; if (!V || !CR.w) return;
+  const s = V / Math.min(CR.w, CR.h) * CR.z;
+  const hx = V/(2*s*CR.w), hy = V/(2*s*CR.h);
+  const cl = (v,h) => Math.min(Math.max(h,1-h), Math.max(Math.min(h,1-h), v));
+  CR.cx = cl(CR.cx, hx); CR.cy = cl(CR.cy, hy);
+  const ox = V/2 - CR.cx*CR.w*s, oy = V/2 - CR.cy*CR.h*s;
+  crImg.style.width = (CR.w*s)+'px'; crImg.style.height = (CR.h*s)+'px';
+  crImg.style.transform = `translate(${ox}px,${oy}px)`;
+}
+function openCropper(src, crop){
+  return new Promise((resolve) => {
+    CR.resolve = resolve; $('#crState').textContent = 'Carregando foto…'; $('#crApply').disabled = true;
+    crImg.onload = () => {
+      CR.w = crImg.naturalWidth; CR.h = crImg.naturalHeight;
+      CR.z = crop ? crop.z : 1; CR.cx = crop ? crop.cx : .5; CR.cy = crop ? crop.cy : (CR.h > CR.w ? .38 : .5);
+      $('#crZoom').value = CR.z; $('#crState').textContent = ''; $('#crApply').disabled = false; crLayout();
+    };
+    crImg.onerror = () => { $('#crState').textContent = 'Não foi possível abrir a foto.'; };
+    CR.w = 0; crImg.src = src;
+    $('#cropper').hidden = false; setTimeout(()=>$('#crApply').focus(), 30);
+  });
+}
+function closeCropper(result){ $('#cropper').hidden = true; const r = CR.resolve; CR.resolve = null; if (r) r(result); }
+function cropBlob(){
+  const V = crView.clientWidth, s = V / Math.min(CR.w, CR.h) * CR.z, sw = V/s;
+  const sx = CR.cx*CR.w - sw/2, sy = CR.cy*CR.h - sw/2;
+  const c = document.createElement('canvas'); c.width = c.height = 640;
+  const ctx = c.getContext('2d'); ctx.imageSmoothingQuality = 'high';
+  ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, 640, 640);
+  const k = 640 / sw;
+  ctx.drawImage(crImg, -sx*k, -sy*k, CR.w*k, CR.h*k);
+  return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('canvas')), 'image/jpeg', 0.88));
+}
+crView.addEventListener('pointerdown', e => { if (!CR.w) return; crView.setPointerCapture(e.pointerId); crView.classList.add('drag'); CR.drag = {x:e.clientX, y:e.clientY, cx:CR.cx, cy:CR.cy}; });
+crView.addEventListener('pointermove', e => {
+  if (!CR.drag) return;
+  const V = crView.clientWidth, s = V / Math.min(CR.w, CR.h) * CR.z;
+  CR.cx = CR.drag.cx - (e.clientX - CR.drag.x)/(CR.w*s); CR.cy = CR.drag.cy - (e.clientY - CR.drag.y)/(CR.h*s); crLayout();
+});
+['pointerup','pointercancel'].forEach(t => crView.addEventListener(t, () => { CR.drag = null; crView.classList.remove('drag'); }));
+crView.addEventListener('wheel', e => { if (!CR.w) return; e.preventDefault(); CR.z = Math.min(4, Math.max(0.4, CR.z * (e.deltaY < 0 ? 1.08 : 1/1.08))); $('#crZoom').value = CR.z; crLayout(); }, {passive:false});
+$('#crZoom').addEventListener('input', e => { CR.z = Number(e.target.value); crLayout(); });
+$('#crReset').onclick = () => { CR.z = 1; CR.cx = .5; CR.cy = CR.h > CR.w ? .38 : .5; $('#crZoom').value = 1; crLayout(); };
+$('#crCancel').onclick = () => closeCropper(null);
+$('#cropper').addEventListener('click', e => { if (e.target.id === 'cropper') closeCropper(null); });
+$('#crApply').onclick = async () => {
+  $('#crApply').disabled = true;
+  try { const blob = await cropBlob(); closeCropper({ blob, crop:{ z:+CR.z.toFixed(3), cx:+CR.cx.toFixed(4), cy:+CR.cy.toFixed(4) } }); }
+  catch(e){ $('#crState').textContent = 'Não foi possível recortar esta imagem.'; $('#crApply').disabled = false; }
+};
+window.addEventListener('resize', () => { if (!$('#cropper').hidden) crLayout(); });
+
+// descarta um recorte intermediário que ainda não foi salvo
+function discardTemp(id){
+  if (!id || !assets) return;
+  if (editing && (id === editing.fotoAsset || id === editing.fotoOrig)) return;
+  if (id === photo.orig) return;
+  assets.delete(id).catch(()=>{});
+}
+async function handleFile(file){
+  if (!file || !assets || !editMode) return;
+  if (!/^image\/(png|jpeg|webp|gif)$/.test(file.type)){ photoMsg('Formato não aceito. Use JPG, PNG, WEBP ou GIF.'); return; }
+  const url = URL.createObjectURL(file);
+  const r = await openCropper(url, null);
+  if (!r){ URL.revokeObjectURL(url); return; }
+  uploading = true; $('#btnSave').disabled = true; photoMsg('Enviando foto…');
+  try{
+    const orig = await resizeImage(file, 1600);
+    const o = await assets.upload(orig, {type: orig.type || file.type});
+    const c = await assets.upload(r.blob, {type:'image/jpeg'});
+    const prev = photo.asset, prevOrig = photo.orig;
+    photo = { asset:c.id, orig:o.id, crop:r.crop, link:photo.link||'' };
+    discardTemp(prev); discardTemp(prevOrig);
+    photoMsg('Foto enviada. Clique em “Salvar cadastro” para gravar.');
+    renderPreview();
+  }catch(err){ photoMsg(upErr(err)); }
+  finally{ uploading=false; $('#btnSave').disabled=false; URL.revokeObjectURL(url); }
+}
+function photoMsg(t){ $('#upState').textContent = t; $('#pasteState').textContent = t; }
+function imageFromData(dt){
+  if (!dt) return null;
+  const f = [...(dt.files||[])].find(f => /^image\//.test(f.type));
+  if (f) return f;
+  const it = [...(dt.items||[])].find(i => i.kind==='file' && /^image\//.test(i.type));
+  return it ? it.getAsFile() : null;
+}
+document.addEventListener('paste', e => {
+  if ($('#scrim').hidden || !$('#cropper').hidden || !editMode) return;
+  const f = imageFromData(e.clipboardData);
+  if (f){ e.preventDefault(); if (!assets){ $('#pasteState').textContent='O envio de fotos não está disponível nesta visualização.'; return; } $('#pasteState').textContent=''; handleFile(f); return; }
+  if (document.activeElement && document.activeElement.id === 'pasteBox'){
+    $('#pasteState').textContent = 'A área de transferência não tem uma imagem. Copie a própria foto (botão direito → “Copiar imagem”), não o endereço.';
+  }
+});
+const pb = $('#pasteBox');
+pb.addEventListener('click', () => pb.focus());
+['dragenter','dragover'].forEach(t => pb.addEventListener(t, e => { e.preventDefault(); pb.classList.add('over'); }));
+['dragleave','drop'].forEach(t => pb.addEventListener(t, e => { e.preventDefault(); pb.classList.remove('over'); }));
+pb.addEventListener('drop', e => {
+  const f = imageFromData(e.dataTransfer);
+  if (f) { $('#pasteState').textContent=''; handleFile(f); return; }
+  const url = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain');
+  if (url){ $('#fotoLink').value = url.trim(); photo.link = url.trim(); renderPreview(); }
+  $('#pasteState').textContent = 'O navegador trouxe só o endereço da imagem. Use “Copiar imagem” e cole aqui para recortar.';
+});
+$('#phCrop').onclick = async () => {
+  if (!photo.asset || !assets) return;
+  const src = '/_blob/' + (photo.orig || photo.asset);
+  const r = await openCropper(src, photo.orig ? photo.crop : null);
+  if (!r) return;
+  uploading = true; $('#btnSave').disabled = true; photoMsg('Aplicando recorte…');
+  try{
+    const c = await assets.upload(r.blob, {type:'image/jpeg'});
+    const prev = photo.asset;
+    photo = { asset:c.id, orig: photo.orig || photo.asset, crop:r.crop, link:photo.link||'' };
+    discardTemp(prev);
+    photoMsg('Recorte aplicado. Clique em “Salvar cadastro” para gravar.');
+    renderPreview();
+  }catch(err){ photoMsg(upErr(err)); }
+  finally{ uploading=false; $('#btnSave').disabled=false; }
+};
+$('#fileIn').addEventListener('change', e => { handleFile(e.target.files[0]); e.target.value=''; });
+const drop = $('#drop');
+['dragenter','dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => handleFile(e.dataTransfer.files[0]));
+
+function slug(s){ return norm(s).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,60) || 'atleta'; }
+
+const stKey = s => norm(s||'Cadastrado').replace(/\s+/g,'-');
+const fmtDT = iso => { if (!iso) return '—'; const d = new Date(iso); return d.toLocaleDateString('pt-BR') + ' · ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); };
+function histOf(a){
+  if (!a) return [];
+  if (Array.isArray(a.historico) && a.historico.length) return a.historico;
+  return [{ tipo:'inicial', status:a.status||'Cadastrado', data:a.criadoEm||a.atualizadoEm||null, fortes:a.fortes||'', melhorar:a.melhorar||'', obs:a.obs||'' }];
+}
+const TIPO_TXT = { inicial:'Cadastro inicial', cadastro:'Atleta cadastrado', mudanca:'Mudança de status', descarte:'Atleta descartado', recadastro:'Atleta recadastrado' };
+function renderTimeline(a){
+  if (!a){ $('#timeline').innerHTML = '<div class="hint" style="margin:0">A timeline começa quando o atleta for salvo. Cada mudança de status fica registrada aqui com a data e a avaliação do momento.</div>'; return; }
+  const h = histOf(a).slice().reverse();
+  $('#timeline').innerHTML = `<ol class="tl">${h.map(e => { const k = stKey(e.status); return `<li>
+    <span class="dot st-${k}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ST_ICON[k]||ST_ICON.cadastrado}</svg></span>
+    <div class="when">${fmtDT(e.data)}</div>
+    <div class="what st-${k}">${esc(e.status||'Cadastrado')} <span class="from">· ${TIPO_TXT[e.tipo]||'Registro'}${e.de?` (antes: ${esc(e.de)})`:''}</span></div>
+    ${e.motivo ? `<div class="why"><b>Motivo:</b> ${esc(e.motivo)}</div>` : ''}
+    ${(e.fortes||e.melhorar||e.obs) ? `<details><summary>Ver avaliação registrada</summary><dl>
+      ${e.fortes?`<dt>Pontos fortes</dt><dd>${esc(e.fortes)}</dd>`:''}${e.melhorar?`<dt>A melhorar</dt><dd>${esc(e.melhorar)}</dd>`:''}${e.obs?`<dt>Observações</dt><dd style="white-space:pre-line">${esc(e.obs)}</dd>`:''}</dl></details>` : ''}
+  </li>`; }).join('')}</ol>`;
+}
+function updateMotivo(){
+  const show = editMode && $('#status').value === 'Descartado' && (!editing || editing.status !== 'Descartado');
+  $('#motivoWrap').hidden = !show;
+}
+$('#status').addEventListener('change', updateMotivo);
+$('#dupZone').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.dupNew){ dupOK = true; $('#dupZone').innerHTML=''; save(); return; }
+  const a = athletes.find(x => x.id === b.dataset.dupOpen); if (!a) return;
+  openEditor(a, b.dataset.recad ? { edit:true, status:'Cadastrado' } : {});
+});
+
+async function save(){
+  if (uploading) return;
+  const v = k => $('#'+k).value.trim();
+  if (!editMode) return;
+  if (!v('nome') || !v('posicao') || !v('clube') || !v('competicao')){ $('#formErr').textContent = 'Preencha nome, posição, clube e competição.'; return; }
+  const newStatus = v('status') || 'Cadastrado', prevStatus = editing ? (editing.status || 'Cadastrado') : null;
+  const descartando = newStatus === 'Descartado' && prevStatus !== 'Descartado';
+  if (descartando && !v('motivo')){ $('#formErr').textContent = 'Informe o motivo do descarte.'; $('#motivo').focus(); return; }
+  if (!editing && !dupOK){
+    const same = athletes.filter(a => norm(a.nome) === norm(v('nome')));
+    if (same.length){
+      const a = same[0], desc = (a.status||'') === 'Descartado';
+      $('#dupZone').innerHTML = `<div class="dup"><div>${desc
+        ? `<b>${esc(a.nome)}</b> (${esc(a.clube||'—')}) já foi cadastrado e está <b>descartado</b>. Recadastre o atleta existente para manter a timeline em um histórico único.`
+        : `Já existe um cadastro de <b>${esc(a.nome)}</b> (${esc(a.clube||'—')}, ${esc(a.status||'Cadastrado')}).`}</div>
+        <div class="row">${desc ? `<button type="button" class="btn primary" data-dup-open="${esc(a.id)}" data-recad="1">Recadastrar atleta existente</button>` : `<button type="button" class="btn primary" data-dup-open="${esc(a.id)}">Abrir cadastro existente</button>`}
+        <button type="button" class="btn" data-dup-new="1">Salvar como novo atleta</button></div></div>`;
+      $('#dupZone').scrollIntoView({block:'nearest'});
+      return;
+    }
+  }
+  photo.link = $('#fotoLink').value.trim();
+  const idade = v('idade') === '' ? null : Number(v('idade'));
+  const now = new Date().toISOString();
+  const data = {
+    nome:v('nome'), idade, posicao:v('posicao'), posicao2:v('posicao2'), posicao3:v('posicao3'), clube:v('clube'), competicao:v('competicao'), pe:v('pe'), status:v('status')||'Cadastrado',
+    fortes:v('fortes'), melhorar:v('melhorar'), obs:v('obs'), agente:v('agente'), contato:v('contato'),
+    status:newStatus,
+    foto: photo.link||'', fotoAsset: photo.asset || null, fotoOrig: photo.asset ? (photo.orig||null) : null, fotoCrop: photo.asset ? (photo.crop||null) : null,
+    fotoRef: (editing&&editing.fotoRef) || ('https://www.google.com/search?tbm=isch&q=' + encodeURIComponent(v('nome')+' '+v('clube')).replace(/%20/g,'+')),
+    criadoEm: (editing&&editing.criadoEm) || now, atualizadoEm: now,
+  };
+  if (descartando){
+    const nota = `Descartado em ${new Date(now).toLocaleDateString('pt-BR')}: ${v('motivo')}`;
+    data.obs = data.obs ? data.obs + '\n' + nota : nota;
+  }
+  const hist = editing ? histOf(editing).map(e => ({...e})) : [];
+  const snap = { fortes:data.fortes, melhorar:data.melhorar, obs:data.obs };
+  if (!editing) hist.push({ tipo:'cadastro', status:newStatus, data:now, ...snap });
+  else if (prevStatus !== newStatus) hist.push({ tipo: descartando ? 'descarte' : (prevStatus === 'Descartado' ? 'recadastro' : 'mudanca'), de:prevStatus, status:newStatus, data:now, ...snap, ...(descartando ? { motivo:v('motivo') } : {}) });
+  data.historico = hist;
+  const id = editing ? editing.id : slug(data.nome) + '-' + Date.now().toString(36);
+  const oldIds = editing ? [editing.fotoAsset, editing.fotoOrig].filter(Boolean) : [];
+  $('#btnSave').disabled = true;
+  try{
+    await db.collection('atletas').doc(id).set(data);
+    if (assets) oldIds.filter(id => id !== data.fotoAsset && id !== data.fotoOrig).forEach(id => assets.delete(id).catch(()=>{}));
+    toast(editing ? 'Cadastro atualizado' : 'Atleta cadastrado');
+    closeEditor();
+  }catch(err){
+    $('#formErr').textContent = err && err.code==='invalid_argument' ? 'Você não tem permissão para alterar esta base.' : 'Não foi possível salvar. Tente de novo.';
+  }finally{ $('#btnSave').disabled=false; }
+}
+$('#btnSave').onclick = save;
+$('#form').addEventListener('submit', e => { e.preventDefault(); save(); });
+
+$('#delZone').addEventListener('click', async e => {
+  if (e.target.id==='btnDel'){
+    $('#delZone').innerHTML = `<div class="confirm">Excluir ${esc(editing.nome)}? <button type="button" class="btn danger" id="delYes">Sim, excluir</button><button type="button" class="btn" id="delNo">Não</button></div>`;
+  } else if (e.target.id==='delNo'){
+    $('#delZone').innerHTML = `<button type="button" class="btn danger" id="btnDel">Excluir atleta</button>`;
+  } else if (e.target.id==='delYes'){
+    const a = editing;
+    try{
+      await db.collection('atletas').doc(a.id).delete();
+      if (assets) [a.fotoAsset, a.fotoOrig].filter(Boolean).forEach(id => assets.delete(id).catch(()=>{}));
+      toast('Atleta excluído'); closeEditor();
+    }catch(err){ $('#formErr').textContent = 'Não foi possível excluir.'; }
+  }
+});
+
+$('#btnNew').onclick = () => openEditor(null);
+
+/* ---------- Export ---------- */
+async function exportXlsx(){
+  if (!window.XLSX){ toast('O gerador de Excel não carregou. Recarregue a página.'); return; }
+  const rows = athletes.filter(a => !state.comp || compOf(a) === state.comp).sort((a,b)=>ORDER[group(a.posicao)]-ORDER[group(b.posicao)]||a.nome.localeCompare(b.nome,'pt'));
+  const base = location.origin;
+  const head = ['Atleta','Idade','Posição','Posição secundária','Posição terciária','Clube','Competição','Pé dominante','Pontos fortes / Características','Pontos a melhorar','Observações','Foto','Status','Agente','Número de contato','Referência de imagem','Atualizado em'];
+  const aoa = [head].concat(rows.map(a => [
+    a.nome, a.idade ?? '', a.posicao||'', a.posicao2||'', a.posicao3||'', a.clube||'', compOf(a), a.pe||'', a.fortes||'', a.melhorar||'', a.obs||'',
+    a.fotoAsset ? base + '/_blob/' + a.fotoAsset : (a.foto||''),
+    a.status||'Cadastrado', a.agente||'', a.contato||'', a.fotoRef||'', a.atualizadoEm ? new Date(a.atualizadoEm).toLocaleDateString('pt-BR') : ''
+  ]));
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  rows.forEach((a,i) => {
+    const r = i+2;
+    const f = ws['L'+r]; if (f && f.v){ f.l = {Target:f.v}; f.v = 'Ver foto'; }
+    const g = ws['P'+r]; if (g && g.v){ g.l = {Target:g.v}; g.v = 'Buscar no Google'; }
+  });
+  ws['!cols'] = [30,7,22,22,22,18,22,13,60,40,30,12,14,24,18,18,13].map(w=>({wch:w}));
+  ws['!autofilter'] = {ref: `A1:Q${aoa.length}`};
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Cadastro Mestre');
+  // Resumo
+  const byPos = GROUPS.map(g=>[g.l, rows.filter(a=>group(a.posicao)===g.k).length]);
+  const compMap = {}; rows.forEach(a=>{ compMap[compOf(a)]=(compMap[compOf(a)]||0)+1; });
+  const compsL = Object.entries(compMap).sort((a,b)=>b[1]-a[1]);
+  const clubMap = {}; rows.forEach(a=>{ clubMap[a.clube||'—']=(clubMap[a.clube||'—']||0)+1; });
+  const clubs = Object.entries(clubMap).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'pt'));
+  const ind = [['Atletas cadastrados', rows.length],['Clubes observados', clubs.length],['Competições', compsL.length]];
+  const res = [['Indicador','Total','','Posição','Atletas','','Competição','Atletas','','Clube','Atletas']];
+  for (let i=0;i<Math.max(ind.length,byPos.length,compsL.length,clubs.length);i++) res.push([...(ind[i]||['','']),'', ...(byPos[i]||['','']),'', ...(compsL[i]||['','']),'', ...(clubs[i]||['',''])]);
+  const ws2 = XLSX.utils.aoa_to_sheet(res); ws2['!cols']=[22,8,3,14,8,3,26,8,3,18,8].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb, ws2, 'Resumo');
+  // Uma aba por grupo
+  GROUPS.forEach(g => {
+    const list = rows.filter(a=>group(a.posicao)===g.k); if (!list.length) return;
+    const s = XLSX.utils.aoa_to_sheet([['Atleta','Idade','Posição','Posição secundária','Posição terciária','Clube','Competição','Pé','Características','Pontos a melhorar','Observações','Status']]
+      .concat(list.map(a=>[a.nome,a.idade??'',a.posicao||'',a.posicao2||'',a.posicao3||'',a.clube||'',compOf(a),a.pe||'',a.fortes||'',a.melhorar||'',a.obs||'',a.status||'Cadastrado'])));
+    s['!cols']=[30,7,22,22,22,18,22,12,60,40,30,14].map(w=>({wch:w}));
+    XLSX.utils.book_append_sheet(wb, s, g.l);
+  });
+  const buf = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+  const d = new Date(); const stamp = d.toISOString().slice(0,10);
+  try{
+    await downloads.save({filename:`Banco_de_Atletas_${state.comp?state.comp.replace(/[^\wÀ-ú]+/g,'_')+'_':''}${stamp}.xlsx`, data:new Uint8Array(buf)});
+    toast('Planilha exportada');
+  }catch(err){
+    if (err && err.code==='declined') return;
+    toast(err && err.code==='rate_limited' ? 'Já há uma exportação aguardando confirmação.' : 'Não foi possível exportar a planilha.');
+  }
+}
+$('#btnExport').onclick = exportXlsx;
+
+/* ---------- Backup (exportar / importar .zip) ---------- */
+const bkMsg = t => { $('#bkState').textContent = t; };
+$('#btnBackup').onclick = () => { $('#bkConfirm').innerHTML=''; bkMsg(''); $('#bkDlg').hidden = false; };
+$('#bkClose').onclick = () => { $('#bkDlg').hidden = true; };
+$('#bkDlg').addEventListener('click', e => { if (e.target.id === 'bkDlg') $('#bkDlg').hidden = true; });
+async function exportBackup(){
+  if (!window.JSZip){ bkMsg('O compactador não carregou. Recarregue a página.'); return; }
+  const btn = $('#bkExport'); btn.disabled = true;
+  try{
+    const zip = new JSZip();
+    const strip = ({id, ...d}) => ({ id, data:d });
+    const dados = { versao:1, exportadoEm:new Date().toISOString(),
+      atletas: athletes.map(strip),
+      shortlists: [{ id:'principal', data:{ titulo:SL.titulo, formacao:SL.formacao, slots:SL.slots, janela:SL.janela||null } }],
+      shortlistsSalvas: SAVED.map(strip) };
+    zip.file('dados.json', JSON.stringify(dados, null, 1));
+    const ids = [...new Set(athletes.flatMap(a => [a.fotoAsset, a.fotoOrig]).filter(Boolean))];
+    let n = 0, fail = 0;
+    const queue = ids.slice();
+    await Promise.all([0,1,2,3].map(async () => { while (queue.length){ const id = queue.shift();
+      try{ const r = await fetch('/_blob/' + id); if (!r.ok) throw 0; const b = await r.blob(); zip.file('fotos/' + id + (/png/.test(b.type)?'.png':'.jpg'), b); }catch(e){ fail++; }
+      bkMsg(`Copiando fotos… ${++n} de ${ids.length}`); } }));
+    bkMsg('Compactando…');
+    const out = await zip.generateAsync({ type:'uint8array' });
+    await downloads.save({ filename:`backup-banco-atletas-${new Date().toISOString().slice(0,10)}.zip`, data:out });
+    bkMsg(`Backup gerado: ${athletes.length} atletas e ${ids.length - fail} fotos.` + (fail ? ` ${fail} fotos não puderam ser copiadas.` : ''));
+  }catch(err){ if (err && err.code === 'declined'){ bkMsg(''); return; } bkMsg('Não foi possível gerar o backup.'); }
+  finally{ btn.disabled = false; }
+}
+$('#bkExport').onclick = exportBackup;
+$('#bkImportBtn').onclick = () => $('#bkFile').click();
+$('#bkFile').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  if (!window.JSZip){ bkMsg('O compactador não carregou. Recarregue a página.'); return; }
+  try{
+    const zip = await JSZip.loadAsync(f); const j = zip.file('dados.json');
+    if (!j) throw new Error('sem dados');
+    const dados = JSON.parse(await j.async('string'));
+    const nA = (dados.atletas||[]).length, nF = Object.keys(zip.files).filter(k => k.startsWith('fotos/') && !zip.files[k].dir).length;
+    $('#bkConfirm').innerHTML = `<div class="dup"><div>O arquivo tem <b>${nA} atletas</b> e <b>${nF} fotos</b>. Atletas com o mesmo cadastro serão substituídos pela versão do backup, e a shortlist atual também.</div><div class="row"><button type="button" class="btn primary" id="bkGo">Importar agora</button><button type="button" class="btn" id="bkNo">Cancelar</button></div></div>`;
+    $('#bkNo').onclick = () => { $('#bkConfirm').innerHTML = ''; };
+    $('#bkGo').onclick = () => { $('#bkConfirm').innerHTML = ''; importBackup(zip, dados); };
+  }catch(err){ bkMsg('Arquivo inválido. Escolha um backup .zip gerado pelo sistema.'); }
+});
+async function importBackup(zip, dados){
+  if (!db || !assets){ bkMsg('Importação indisponível nesta visualização.'); return; }
+  const map = {}; const fotos = Object.keys(zip.files).filter(k => k.startsWith('fotos/') && !zip.files[k].dir);
+  let n = 0, fail = 0;
+  for (const k of fotos){
+    const old = k.slice(6).replace(/\.\w+$/, ''); const type = /\.png$/i.test(k) ? 'image/png' : 'image/jpeg';
+    try{ const b = await zip.files[k].async('blob'); const r = await assets.upload(new Blob([b], {type}), {type}); map[old] = r.id; }catch(e){ fail++; }
+    bkMsg(`Enviando fotos… ${++n} de ${fotos.length}`);
+  }
+  let na = 0;
+  for (const a of (dados.atletas||[])){
+    const d = { ...a.data };
+    d.fotoAsset = d.fotoAsset ? (map[d.fotoAsset] || null) : null;
+    d.fotoOrig = d.fotoOrig ? (map[d.fotoOrig] || null) : null;
+    if (!d.fotoAsset){ d.fotoOrig = null; d.fotoCrop = null; }
+    try{ await db.collection('atletas').doc(a.id).set(d); }catch(e){ fail++; }
+    bkMsg(`Gravando atletas… ${++na} de ${dados.atletas.length}`);
+  }
+  for (const x of (dados.shortlists||[])) { try{ await db.collection('shortlists').doc(x.id).set(x.data); }catch(e){} }
+  for (const x of (dados.shortlistsSalvas||[])) { try{ await db.collection('shortlistsSalvas').doc(x.id).set(x.data); }catch(e){} }
+  bkMsg(`Importação concluída: ${na} atletas e ${Object.keys(map).length} fotos.` + (fail ? ` ${fail} itens falharam.` : ''));
+  toast('Backup importado');
+}
+
+/* ---------- Shortlist ---------- */
+const POSN = n => POS_LIST.some(q=>q.n===n);
+const ALLVOL = ['Volante central','Volante direita','Volante esquerda'];
+const SLOTS = {
+  gol:{l:'Goleiro',          a:'GOL', g:'gk',  acc:['Goleiro'], leg:['gk']},
+  ld: {l:'Lateral direito',  a:'LD',  g:'lat', acc:['Lateral direita','Ala pela direita'], leg:['lat'], side:'d'},
+  le: {l:'Lateral esquerdo', a:'LE',  g:'lat', acc:['Lateral esquerda','Ala pela esquerda'], leg:['lat'], side:'e'},
+  ad: {l:'Ala direito',      a:'AD',  g:'lat', acc:['Ala pela direita','Lateral direita'], leg:['lat'], side:'d'},
+  ae: {l:'Ala esquerdo',     a:'AE',  g:'lat', acc:['Ala pela esquerda','Lateral esquerda'], leg:['lat'], side:'e'},
+  zd: {l:'Zagueiro',         a:'ZD',  g:'zag', acc:['Zagueiro pela direita','Zagueiro central'], leg:['zag'], side:'d'},
+  ze: {l:'Zagueiro',         a:'ZE',  g:'zag', acc:['Zagueiro pela esquerda','Zagueiro central'], leg:['zag'], side:'e'},
+  zc: {l:'Zagueiro central', a:'ZC',  g:'zag', acc:['Zagueiro central','Zagueiro pela direita','Zagueiro pela esquerda'], leg:['zag']},
+  vol:{l:'Volante',          a:'VOL', g:'vol', acc:ALLVOL, leg:['vol']},
+  vd: {l:'Volante',          a:'VD',  g:'vol', acc:['Volante direita','Volante central'], leg:['vol'], side:'d'},
+  ve: {l:'Volante',          a:'VE',  g:'vol', acc:['Volante esquerda','Volante central'], leg:['vol'], side:'e'},
+  mcd:{l:'Meia',             a:'MCD', g:'mei', acc:['Meia pela direita','Meia atacante pela direita','Meia','Meia atacante central'], leg:['mei'], side:'d'},
+  mce:{l:'Meia',             a:'MCE', g:'mei', acc:['Meia pela esquerda','Meia atacante pela esquerda','Meia','Meia atacante central'], leg:['mei'], side:'e'},
+  md: {l:'Meia direita',     a:'MD',  g:'mei', acc:['Meia pela direita','Meia atacante pela direita','Extremo pela direita'], leg:['mei','ext'], side:'d'},
+  me: {l:'Meia esquerda',    a:'ME',  g:'mei', acc:['Meia pela esquerda','Meia atacante pela esquerda','Extremo pela esquerda'], leg:['mei','ext'], side:'e'},
+  ed: {l:'Extremo direito',  a:'ED',  g:'ext', acc:['Extremo pela direita','Meia atacante pela direita'], leg:['ext'], side:'d'},
+  ee: {l:'Extremo esquerdo', a:'EE',  g:'ext', acc:['Extremo pela esquerda','Meia atacante pela esquerda'], leg:['ext'], side:'e'},
+  ca: {l:'Centroavante',     a:'CA',  g:'ata', acc:['Atacante central','Atacante pela direita','Atacante pela esquerda'], leg:['ata']},
+  ca2:{l:'Centroavante',     a:'CA',  g:'ata', acc:['Atacante central','Atacante pela direita','Atacante pela esquerda'], leg:['ata']},
+};
+// linhas do ataque (topo) para o goleiro (base); esquerda do time à esquerda da tela
+// cada função: [chave, x em % da largura do campo, deslocamento vertical dentro da linha (px; + = mais recuado)]
+const FORMS = {
+  '4-3-3':   [[['ee',13,34],['ca',50,0],['ed',87,34]],
+              [['mce',28,0],['vol',50,46],['mcd',72,0]],
+              [['le',12,0],['ze',37,40],['zd',63,40],['ld',88,0]],
+              [['gol',50,0]]],
+  '4-4-2':   [[['ca',36,0],['ca2',64,0]],
+              [['me',12,0],['ve',37,40],['vd',63,40],['md',88,0]],
+              [['le',12,0],['ze',37,40],['zd',63,40],['ld',88,0]],
+              [['gol',50,0]]],
+  '3-5-2':   [[['ca',36,0],['ca2',64,0]],
+              [['mce',32,0],['mcd',68,0]],
+              [['ae',11,0],['vol',50,34],['ad',89,0]],
+              [['ze',24,0],['zc',50,30],['zd',76,0]],
+              [['gol',50,0]]],
+  '3-4-3':   [[['ee',13,34],['ca',50,0],['ed',87,34]],
+              [['ae',11,0],['ve',37,36],['vd',63,36],['ad',89,0]],
+              [['ze',24,0],['zc',50,30],['zd',76,0]],
+              [['gol',50,0]]],
+  '4-1-4-1': [[['ca',50,0]],
+              [['me',12,0],['mce',37,20],['mcd',63,20],['md',88,0]],
+              [['vol',50,0]],
+              [['le',12,0],['ze',37,40],['zd',63,40],['ld',88,0]],
+              [['gol',50,0]]],
+};
+let SL = { titulo:'Shortlist', formacao:'4-3-3', slots:{} };
+let slRef = null, slWriting = Promise.resolve();
+let page = 'db';
+try { if (localStorage.getItem('ba_page') === 'sl') page = 'sl'; } catch(e){}
+
+function fitsSlot(a, sl){
+  const p = a.posicao || '';
+  if (POSN(p)) return sl.acc.includes(p);
+  if (!sl.leg.includes(group(p))) return false;
+  const sd = sideOf(norm(p));
+  return !sd || !sl.side || sd === sl.side;
+}
+function saveSL(){
+  if (!slRef) return;
+  const body = { titulo:SL.titulo, formacao:SL.formacao, slots:SL.slots, janela:SL.janela||null, atualizadoEm:new Date().toISOString() };
+  slWriting = slWriting.then(() => slRef.set(body)).catch(err => {
+    $('#slMsg').innerHTML = `<div class="notice">${err && err.code==='invalid_argument' ? 'Você não tem permissão para alterar a shortlist.' : 'Não foi possível salvar a shortlist. Tente de novo.'}</div>`;
+  });
+}
+function setPage(p){
+  page = p; try{ localStorage.setItem('ba_page', p); }catch(e){}
+  $('#dbView').hidden = p !== 'db'; $('#slView').hidden = p !== 'sl';
+  $('#btnSL').setAttribute('aria-pressed', p === 'sl');
+  $('#btnSLtxt').textContent = p === 'sl' ? 'Banco de atletas' : 'Shortlist';
+  if (p === 'sl') renderSL();
+}
+$('#btnSL').onclick = () => setPage(page === 'sl' ? 'db' : 'sl');
+
+const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></svg>';
+const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+function renderSL(){
+  if (page !== 'sl') return;
+  const f = FORMS[SL.formacao] ? SL.formacao : '4-3-3';
+  if (document.activeElement !== $('#slTitle')) $('#slTitle').value = SL.titulo || 'Shortlist';
+  if (!$('#slForms').options.length) $('#slForms').innerHTML = Object.keys(FORMS).map(k => `<option value="${k}">${k}</option>`).join('');
+  $('#slForms').value = f;
+  $('#slSub').textContent = 'Por posição · ' + janelaTxt(SL.janela);
+  const byId = new Map(athletes.map(a => [a.id, a]));
+  $('#slRows').innerHTML = FORMS[f].map(row => `<div class="sl-row">${row.map(([key,px,dy]) => {
+    const sl = SLOTS[key], ids = (SL.slots[key]||[]).filter(id => byId.has(id));
+    const items = ids.map((id,i) => { const a = byId.get(id); return `<li style="--c:${colorOf(group(a.posicao))}">
+        <span class="thumb">${photoHTML(a)}</span>
+        <button type="button" class="who2" data-open="${esc(id)}"><b>${esc(a.nome)}</b><span>${esc(a.clube||'—')}${a.posicao&&!sl.acc.includes(a.posicao)&&POSN(a.posicao)?' · '+esc(a.posicao):''}</span></button>
+        <button type="button" class="ic" data-up="${key}|${i}" title="Subir na lista" aria-label="Subir ${esc(a.nome)}" ${i===0?'disabled':''}>${ICON_UP}</button>
+        <button type="button" class="ic rm" data-rm="${key}|${esc(id)}" title="Remover da shortlist" aria-label="Remover ${esc(a.nome)}">${ICON_X}</button></li>`; }).join('');
+    return `<div class="slot" style="--c:${colorOf(sl.g)};--x:${px}%;--dy:${dy}px">
+      <div class="slot-h"><span>${sl.l} (${sl.a})</span><span class="k">${ids.length}</span></div>
+      ${ids.length ? `<ul>${items}</ul>` : `<div class="empty-s">Nenhum jogador</div>`}
+      <button type="button" class="slot-add" data-add="${key}">+ Adicionar jogador</button></div>`;
+  }).join('')}</div>`).join('');
+  layoutSL();
+}
+const wideSL = window.matchMedia('(min-width: 761px)');
+function layoutSL(){
+  $$('#slRows .sl-row').forEach(r => {
+    if (!wideSL.matches){ r.style.height = ''; return; }
+    let h = 0; r.querySelectorAll('.slot').forEach(b => { h = Math.max(h, b.offsetTop + b.offsetHeight); });
+    r.style.height = h + 'px';
+  });
+}
+wideSL.addEventListener('change', layoutSL);
+window.addEventListener('resize', () => { if (page === 'sl') layoutSL(); });
+$('#slForms').addEventListener('change', e => { if (e.target.value===SL.formacao) return; SL.formacao=e.target.value; renderSL(); saveSL(); });
+
+/* ---------- Janela de contratação / shortlists salvas ---------- */
+let SAVED = [];
+const fmtD = iso => { if (!iso) return '__/__/____'; const [y,m,d] = iso.split('-'); return `${d}/${m}/${y}`; };
+function janelaTxt(j){ return j && j.nome ? `${j.nome} · ${fmtD(j.inicio)} – ${fmtD(j.fim)}` : 'Janela de contratação não definida'; }
+function renderSaved(){
+  const sel = $('#slSaved'); if (!sel) return;
+  sel.innerHTML = `<option value="">${SAVED.length ? 'Abrir shortlist salva…' : 'Nenhuma shortlist salva'}</option>` +
+    SAVED.map(x => `<option value="${esc(x.id)}">${esc(janelaTxt(x.janela))}</option>`).join('');
+  sel.disabled = !SAVED.length;
+}
+$('#slSaved').addEventListener('change', e => {
+  const x = SAVED.find(v => v.id === e.target.value); e.target.value = '';
+  if (!x) return;
+  SL = { titulo: x.titulo || 'Shortlist', formacao: x.formacao || '4-3-3', slots: JSON.parse(JSON.stringify(x.slots || {})), janela: x.janela || null };
+  renderSL(); saveSL(); toast('Shortlist carregada: ' + janelaTxt(x.janela));
+});
+function openSave(){
+  const j = SL.janela || {};
+  $('#svNome').value = j.nome || 'Primeira janela'; $('#svIni').value = j.inicio || ''; $('#svFim').value = j.fim || '';
+  $('#svErr').textContent = ''; $('#saveDlg').hidden = false; setTimeout(()=>$('#svNome').focus(), 30);
+}
+const closeSave = () => { $('#saveDlg').hidden = true; };
+$('#btnSaveSL').onclick = openSave; $('#svClose').onclick = closeSave; $('#svCancel').onclick = closeSave;
+$('#saveDlg').addEventListener('click', e => { if (e.target.id === 'saveDlg') closeSave(); });
+document.addEventListener('keydown', e => { if (e.key==='Escape' && !$('#saveDlg').hidden) closeSave(); });
+$('#svOk').onclick = async () => {
+  const j = { nome: $('#svNome').value, inicio: $('#svIni').value, fim: $('#svFim').value };
+  if (!j.inicio || !j.fim){ $('#svErr').textContent = 'Informe as datas de início e fim da janela.'; return; }
+  if (j.fim < j.inicio){ $('#svErr').textContent = 'A data de fim precisa ser depois do início.'; return; }
+  if (!db){ $('#svErr').textContent = 'Banco de dados indisponível.'; return; }
+  $('#svOk').disabled = true;
+  try{
+    SL.janela = j;
+    const id = slug(j.nome + '-' + j.inicio);
+    const existed = SAVED.some(x => x.id === id);
+    await db.collection('shortlistsSalvas').doc(id).set({ titulo:SL.titulo, formacao:SL.formacao, slots:SL.slots, janela:j, salvoEm:new Date().toISOString() });
+    saveSL(); renderSL(); closeSave();
+    toast(existed ? 'Shortlist atualizada: ' + janelaTxt(j) : 'Shortlist salva: ' + janelaTxt(j));
+  }catch(err){
+    $('#svErr').textContent = err && err.code==='invalid_argument' ? 'Você não tem permissão para salvar.' : 'Não foi possível salvar. Tente de novo.';
+  }finally{ $('#svOk').disabled = false; }
+};
+
+/* ---------- Exportar shortlist em PDF ---------- */
+const HEX = {gk:'#C77800',zag:'#2F5DA8',lat:'#0F8A8A',vol:'#6A4BB0',mei:'#B0467A',ext:'#D2552B',ata:'#A11D2E',out:'#6B6478'};
+const rgb = h => [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+const mix = (h, t, k) => { const a=rgb(h), b=rgb(t); return a.map((v,i)=>Math.round(v*k+b[i]*(1-k))); };
+function loadPhoto(a, size){
+  if (!a.fotoAsset) return Promise.resolve(null);
+  return new Promise(res => {
+    const im = new Image();
+    im.onload = () => { try{
+      const c = document.createElement('canvas'); c.width = c.height = size;
+      const g = c.getContext('2d'); g.fillStyle = '#FFFFFF'; g.fillRect(0,0,size,size);
+      const m = Math.min(im.naturalWidth, im.naturalHeight);
+      g.drawImage(im, (im.naturalWidth-m)/2, (im.naturalHeight-m)*0.3, m, m, 0, 0, size, size);
+      res(c.toDataURL('image/jpeg', 0.9)); } catch(e){ res(null); } };
+    im.onerror = () => res(null);
+    im.src = '/_blob/' + a.fotoAsset;
+  });
+}
+/* ---------- PDF do cadastro do atleta (monocromático) ---------- */
+async function exportAthletePDF(){
+  if (!editing) return;
+  if (!window.jspdf || !window.jspdf.jsPDF){ toast('O gerador de PDF não carregou. Recarregue a página.'); return; }
+  if (!downloads){ toast('Exportação indisponível nesta visualização.'); return; }
+  const a = athletes.find(x => x.id === editing.id) || editing;
+  const btn = $('#btnAthPDF'); btn.disabled = true;
+  try{
+    const img = await loadPhoto(a, 480);
+    const doc = new window.jspdf.jsPDF({ unit:'mm', format:'a4', orientation:'portrait' });
+    const W = 210, H = 297, M = 14, CW = W - 2*M;
+    const INK = [20,20,20], MID = [95,95,95], SOFT = [150,150,150], LINE = [205,205,205], FILL = [243,243,243];
+    const pdfTxt = t => String(t ?? '').replace(/–/g,'-');
+    let y = 0, page = 1;
+    const footer = () => { doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...SOFT);
+      doc.text('Observação técnica · Anderson Batatais', M, H-8); doc.text('Página ' + page, W-M, H-8, {align:'right'}); };
+    const ensure = h => { if (y + h > H - 16){ footer(); doc.addPage(); page++; y = 16; } };
+    const section = t => { ensure(12); y += 3; doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...INK);
+      doc.text(pdfTxt(t).toUpperCase(), M, y); doc.setDrawColor(...INK); doc.setLineWidth(0.4); doc.line(M, y+1.6, W-M, y+1.6); y += 7; };
+    const para = (label, text) => {
+      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...MID); ensure(8); doc.text(pdfTxt(label), M, y); y += 4.2;
+      doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(...INK);
+      const lines = doc.splitTextToSize(pdfTxt(text || '—'), CW);
+      lines.forEach(l => { ensure(5); doc.text(l, M, y); y += 4.6; }); y += 2.5;
+    };
+
+    // Cabeçalho
+    doc.setFillColor(...INK); doc.rect(M, 12, 1.6, 17, 'F');
+    doc.setTextColor(...MID); doc.setFont('helvetica','normal'); doc.setFontSize(8);
+    doc.text('CADASTRO DO ATLETA · OBSERVAÇÃO TÉCNICA', M+5, 15.5);
+    doc.setTextColor(...INK); doc.setFont('helvetica','bold'); doc.setFontSize(20);
+    doc.text(pdfTxt(a.nome).toUpperCase(), M+5, 23.5, {maxWidth: CW-45});
+    doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(...MID);
+    doc.text(pdfTxt([a.clube, compOf(a)].filter(Boolean).join(' · ')), M+5, 28.8);
+    doc.setFontSize(8); doc.text('Gerado em ' + new Date().toLocaleDateString('pt-BR'), W-M, 15.5, {align:'right'});
+    // selo de status (monocromático)
+    const st = pdfTxt(a.status || 'Cadastrado').toUpperCase(); doc.setFont('helvetica','bold'); doc.setFontSize(8);
+    const sw = doc.getTextWidth(st) + 8;
+    const dark = st === 'PRIORIDADE';
+    doc.setDrawColor(...INK); doc.setLineWidth(0.4); doc.setFillColor(...(dark ? INK : [255,255,255]));
+    doc.roundedRect(W-M-sw, 21, sw, 6.5, 3.2, 3.2, dark ? 'FD' : 'D');
+    doc.setTextColor(...(dark ? [255,255,255] : INK)); doc.text(st, W-M-sw/2, 25.3, {align:'center'});
+    y = 36;
+
+    // Foto + dados
+    const PH = 46;
+    doc.setDrawColor(...LINE); doc.setLineWidth(0.3);
+    if (img){ doc.addImage(img, 'JPEG', M, y, PH, PH); doc.rect(M, y, PH, PH); }
+    else { doc.setFillColor(...FILL); doc.rect(M, y, PH, PH, 'FD'); doc.setTextColor(...SOFT); doc.setFont('helvetica','bold'); doc.setFontSize(22); doc.text(initials(a.nome), M+PH/2, y+PH/2+3, {align:'center'}); }
+    const fields = [
+      ['Idade', a.idade != null && a.idade !== '' ? a.idade + ' anos' : '—'], ['Pé dominante', a.pe || '—'],
+      ['Posição principal', a.posicao || '—'], ['Posição secundária', a.posicao2 || '—'],
+      ['Posição terciária', a.posicao3 || '—'], ['Status', a.status || 'Cadastrado'],
+      ['Clube', a.clube || '—'], ['Competição', compOf(a)],
+      ['Agente', a.agente || '—'], ['Número de contato', a.contato || '—'],
+    ];
+    const gx = M + PH + 8, colW = (W - M - gx) / 2, rowH = PH / 5;
+    fields.forEach((f, i) => {
+      const cx = gx + (i % 2) * colW, cy = y + Math.floor(i / 2) * rowH;
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...SOFT); doc.text(pdfTxt(f[0]).toUpperCase(), cx, cy + 3);
+      doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(...INK);
+      doc.text(doc.splitTextToSize(pdfTxt(f[1]), colW - 3)[0], cx, cy + 7.3);
+      if (i < 8) { doc.setDrawColor(...LINE); doc.setLineWidth(0.2); doc.line(cx, cy + rowH - 0.6, cx + colW - 4, cy + rowH - 0.6); }
+    });
+    y += PH + 4;
+
+    // Campograma
+    section('Campograma');
+    const pw = 120, ph = 80, px = M + (CW - pw)/2; ensure(ph + 12);
+    const P = (vx, vy) => [px + vx*pw/120, y + vy*ph/80];
+    doc.setDrawColor(...SOFT); doc.setLineWidth(0.35); doc.setFillColor(255,255,255);
+    doc.roundedRect(px, y, pw, ph, 1.5, 1.5, 'D');
+    const R = (x1,y1,w,h) => { const [a1,b1] = P(x1,y1); doc.rect(a1, b1, w*pw/120, h*ph/80); };
+    doc.setDrawColor(...LINE);
+    R(3,3,114,74); doc.line(...P(60,3), ...P(60,77)); { const [cx,cy] = P(60,40); doc.circle(cx, cy, 10*pw/120); }
+    R(3,22,16,36); R(3,32,6,16); R(101,22,16,36); R(111,32,6,16);
+    const sets = [a.posicao, a.posicao2, a.posicao3].map(spotsOf);
+    POS_LIST.forEach(q => {
+      const lv = sets[0].has(q) ? 1 : sets[1].has(q) ? 2 : sets[2].has(q) ? 3 : 0;
+      const [cx, cy] = P(q.x, q.y);
+      if (lv === 1){ doc.setFillColor(...INK); doc.setDrawColor(...INK); doc.circle(cx, cy, 2.3, 'F'); doc.setLineWidth(0.3); doc.circle(cx, cy, 3.4, 'D'); }
+      else if (lv === 2){ doc.setFillColor(...MID); doc.circle(cx, cy, 2, 'F'); }
+      else if (lv === 3){ doc.setDrawColor(...INK); doc.setLineWidth(0.5); doc.circle(cx, cy, 1.9, 'D'); }
+      else { doc.setFillColor(215,215,215); doc.circle(cx, cy, 1.3, 'F'); }
+      doc.setFont('helvetica', lv ? 'bold' : 'normal'); doc.setFontSize(5.8); doc.setTextColor(...(lv ? INK : SOFT));
+      doc.text(q.l, cx, cy + 5.6, {align:'center'});
+    });
+    y += ph + 5;
+    // legenda
+    const lg = [['Principal',1],['Secundária',2],['Terciária',3]]; let lx = px + pw/2 - 45;
+    lg.forEach(([t,l]) => {
+      if (l===1){ doc.setFillColor(...INK); doc.circle(lx, y-1, 1.6, 'F'); } else if (l===2){ doc.setFillColor(...MID); doc.circle(lx, y-1, 1.5, 'F'); } else { doc.setDrawColor(...INK); doc.setLineWidth(0.5); doc.circle(lx, y-1, 1.4, 'D'); }
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...MID); doc.text(t, lx + 3, y); lx += 32;
+    });
+    y += 6;
+
+    // Avaliação
+    section('Avaliação');
+    para('Pontos fortes / Características', a.fortes);
+    para('Pontos a melhorar', a.melhorar);
+    para('Observações', a.obs);
+
+    // Timeline
+    section('Timeline de status');
+    const hist = histOf(a).slice().reverse();
+    hist.forEach(e => {
+      const lines = e.motivo ? doc.splitTextToSize('Motivo: ' + pdfTxt(e.motivo), CW - 10) : [];
+      ensure(11 + lines.length * 4.4);
+      doc.setFillColor(...INK); doc.circle(M + 1.5, y - 1.2, 1.3, 'F');
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...SOFT); doc.text(pdfTxt(fmtDT(e.data)), M + 6, y - 0.2);
+      y += 4.4;
+      doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(...INK);
+      const head = pdfTxt(e.status || 'Cadastrado'); doc.text(head, M + 6, y);
+      doc.setFont('helvetica','normal'); doc.setTextColor(...MID);
+      doc.text(' · ' + pdfTxt(TIPO_TXT[e.tipo] || 'Registro') + (e.de ? ' (antes: ' + pdfTxt(e.de) + ')' : ''), M + 6 + doc.getTextWidth(head) + 0.5, y);
+      y += 4.6;
+      if (lines.length){ doc.setTextColor(...INK); doc.setFontSize(8.8); lines.forEach(l => { doc.text(l, M + 6, y); y += 4.4; }); }
+      doc.setDrawColor(...LINE); doc.setLineWidth(0.2); doc.line(M + 6, y - 1.5, W - M, y - 1.5); y += 2.5;
+    });
+    footer();
+    const name = `Cadastro_${pdfTxt(a.nome).replace(/[^\wÀ-ú]+/g,'_').replace(/^_|_$/g,'')}.pdf`;
+    await downloads.save({ filename:name, data:new Uint8Array(doc.output('arraybuffer')) });
+    toast('PDF do cadastro gerado');
+  }catch(err){
+    if (err && err.code==='declined') return;
+    toast(err && err.code==='rate_limited' ? 'Já há uma exportação aguardando confirmação.' : 'Não foi possível gerar o PDF.');
+  }finally{ btn.disabled = false; }
+}
+$('#btnAthPDF').onclick = exportAthletePDF;
+
+function loadThumb(a){
+  const src = a.fotoAsset ? '/_blob/' + a.fotoAsset : '';
+  if (!src) return Promise.resolve(null);
+  return new Promise(res => {
+    const im = new Image();
+    im.onload = () => { try{
+      const c = document.createElement('canvas'); c.width = c.height = 120;
+      const s = Math.min(im.naturalWidth, im.naturalHeight);
+      const g2 = c.getContext('2d'); g2.fillStyle = '#FFFFFF'; g2.fillRect(0,0,120,120); g2.drawImage(im, (im.naturalWidth-s)/2, (im.naturalHeight-s)*0.3, s, s, 0, 0, 120, 120);
+      res(c.toDataURL('image/jpeg', 0.85)); } catch(e){ res(null); } };
+    im.onerror = () => res(null);
+    im.src = src;
+  });
+}
+async function exportPDF(){
+  if (!window.jspdf || !window.jspdf.jsPDF){ toast('O gerador de PDF não carregou. Recarregue a página.'); return; }
+  if (!downloads){ toast('Exportação indisponível nesta visualização.'); return; }
+  const btn = $('#btnPDF'); btn.disabled = true;
+  try{
+    const f = FORMS[SL.formacao] ? SL.formacao : '4-3-3';
+    const byId = new Map(athletes.map(a => [a.id, a]));
+    const rows = FORMS[f].map(r => r.map(([k,px,dy]) => ({ k, px, dy, sl:SLOTS[k], list:(SL.slots[k]||[]).map(id=>byId.get(id)).filter(Boolean) })));
+    const thumbs = new Map();
+    await Promise.all(rows.flat().flatMap(b => b.list).map(async a => { if (!thumbs.has(a.id)) thumbs.set(a.id, await loadThumb(a)); }));
+
+    const doc = new window.jspdf.jsPDF({ unit:'mm', format:'a4', orientation:'portrait' });
+    const W = 210, H = 297, M = 8;
+    // cabeçalho
+    doc.setFillColor(109,62,216); doc.rect(M, 10, 1.6, 15, 'F');
+    doc.setTextColor(20,18,28); doc.setFont('helvetica','bold'); doc.setFontSize(20);
+    doc.text((SL.titulo||'Shortlist').toUpperCase(), M+5, 17, {maxWidth: W-2*M-50});
+    doc.setTextColor(109,62,216); doc.setFontSize(12); doc.text(('Por posição · ' + janelaTxt(SL.janela).replace('–','-')).toUpperCase(), M+5, 24, {maxWidth: W-2*M-55});
+    doc.setTextColor(110,110,120); doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+    doc.text('Gerado em ' + new Date().toLocaleDateString('pt-BR'), W-M, 14, {align:'right'});
+    doc.text('Sistema ' + f, W-M, 19, {align:'right'});
+    // campo
+    const PX = M, PY = 32, PW = W-2*M, PH = H-PY-M;
+    doc.setFillColor(255,255,255); doc.setDrawColor(200,200,205); doc.setLineWidth(0.4); doc.roundedRect(PX, PY, PW, PH, 4, 4, 'FD');
+    doc.setDrawColor(175,175,180); doc.setLineWidth(0.35);
+    const ix = PX+4, iy = PY+4, iw = PW-8, ih = PH-8;
+    doc.rect(ix, iy, iw, ih); doc.line(ix, iy+ih/2, ix+iw, iy+ih/2); doc.circle(ix+iw/2, iy+ih/2, 17);
+    doc.rect(ix+iw*0.2, iy, iw*0.6, ih*0.14); doc.rect(ix+iw*0.36, iy, iw*0.28, ih*0.05);
+    doc.rect(ix+iw*0.2, iy+ih*0.86, iw*0.6, ih*0.14); doc.rect(ix+iw*0.36, iy+ih*0.95, iw*0.28, ih*0.05);
+    // caixas
+    const top = PY+7, bottom = PY+PH-5, gapY = 5, K = 0.16;
+    const HEAD = 7, bwd = Math.min(44, (PW-8)*0.215);
+    const spanDy = rows.map(r => { const d = r.map(b => b.dy*K); return Math.max(...d) - Math.min(...d); });
+    const maxItems = rows.map(r => Math.max(1, ...r.map(b => b.list.length)));
+    const avail = bottom - top - gapY*(rows.length-1) - rows.length*(HEAD+3) - spanDy.reduce((x,y)=>x+y,0);
+    const itemH = Math.max(5.2, Math.min(9, avail / maxItems.reduce((x,y)=>x+y,0)));
+    const hOf = b => HEAD + Math.max(1, b.list.length)*itemH + 3;
+    const rowH = rows.map(r => { const m = Math.min(...r.map(b=>b.dy*K)); return Math.max(...r.map(b => b.dy*K - m + hOf(b))); });
+    const used = rowH.reduce((x,y)=>x+y,0) + gapY*(rows.length-1);
+    const extra = Math.max(0, (bottom - top - used) / Math.max(1, rows.length-1));
+    let y = top;
+    rows.forEach((row, ri) => {
+      const minDy = Math.min(...row.map(b=>b.dy*K));
+      const isGK = row.length === 1 && row[0].k === 'gol';
+      const rowY = isGK ? bottom - rowH[ri] : y;
+      row.forEach(b => {
+        const bw = bwd, bh = hOf(b);
+        const x = Math.max(PX+2, Math.min(PX+PW-2-bw, (PX+4) + (PW-8)*b.px/100 - bw/2));
+        const y = rowY + b.dy*K - minDy;
+        const col = HEX[b.sl.g] || HEX.out;
+        doc.setFillColor(255,255,255); doc.setDrawColor(...rgb(col)); doc.setLineWidth(0.7);
+        doc.roundedRect(x, y, bw, bh, 2, 2, 'FD');
+        doc.setFillColor(...mix(col,'#FFFFFF',0.16)); doc.roundedRect(x+0.35, y+0.35, bw-0.7, HEAD, 1.7, 1.7, 'F');
+        doc.rect(x+0.35, y+HEAD-2, bw-0.7, 2.35, 'F');
+        doc.setTextColor(...rgb(col)); doc.setFont('helvetica','bold'); doc.setFontSize(8);
+        doc.text(`${b.sl.l.toUpperCase()} (${b.sl.a})`, x+bw/2, y+4.8, {align:'center', maxWidth: bw-3});
+        if (!b.list.length){
+          doc.setTextColor(150,150,158); doc.setFont('helvetica','normal'); doc.setFontSize(7);
+          doc.text('Nenhum jogador', x+bw/2, y+HEAD+itemH/2+1.5, {align:'center'});
+        }
+        b.list.forEach((a, i) => {
+          const ry = y + HEAD + 1 + i*itemH, ph = Math.min(itemH-1.2, 7.5);
+          if (i>0){ doc.setDrawColor(225,225,230); doc.setLineWidth(0.2); doc.line(x+2, ry, x+bw-2, ry); }
+          const pc = HEX[group(a.posicao)] || col, img = thumbs.get(a.id);
+          if (img){ doc.addImage(img, 'JPEG', x+2, ry+(itemH-ph)/2, ph, ph); doc.setDrawColor(...rgb(pc)); doc.setLineWidth(0.3); doc.rect(x+2, ry+(itemH-ph)/2, ph, ph); }
+          else { doc.setFillColor(...mix(pc,'#FFFFFF',0.14)); doc.setDrawColor(...rgb(pc)); doc.setLineWidth(0.3); doc.circle(x+2+ph/2, ry+itemH/2, ph/2, 'FD');
+            doc.setTextColor(...rgb(pc)); doc.setFont('helvetica','bold'); doc.setFontSize(Math.max(5, ph*0.9)); doc.text(initials(a.nome), x+2+ph/2, ry+itemH/2+ph*0.16, {align:'center'}); }
+          const tx = x + 4 + ph, tw = bw - (tx - x) - 2;
+          doc.setTextColor(20,18,28); doc.setFont('helvetica','bold'); doc.setFontSize(itemH < 7 ? 7 : 8);
+          doc.text(doc.splitTextToSize(a.nome, tw)[0], tx, ry + itemH/2 - (itemH<7?0.2:0.5));
+          doc.setTextColor(105,105,115); doc.setFont('helvetica','normal'); doc.setFontSize(itemH < 7 ? 5.8 : 6.5);
+          doc.text(doc.splitTextToSize(a.clube||'—', tw)[0], tx, ry + itemH/2 + (itemH<7?2.2:2.8));
+        });
+      });
+      y += rowH[ri] + gapY + extra;
+    });
+    const name = `Shortlist_${(SL.titulo||'Shortlist').replace(/[^\wÀ-ú]+/g,'_').replace(/^_|_$/g,'')}_${f}.pdf`;
+    await downloads.save({ filename:name, data:new Uint8Array(doc.output('arraybuffer')) });
+    toast('PDF exportado');
+  }catch(err){
+    if (err && err.code==='declined') return;
+    toast(err && err.code==='rate_limited' ? 'Já há uma exportação aguardando confirmação.' : 'Não foi possível gerar o PDF.');
+  }finally{ btn.disabled = false; }
+}
+$('#btnPDF').onclick = exportPDF;
+$('#slTitle').addEventListener('change', e => { SL.titulo = e.target.value.trim() || 'Shortlist'; saveSL(); });
+$('#slRows').addEventListener('click', e => {
+  const t = e.target.closest('button'); if (!t) return;
+  if (t.dataset.open){ const a = athletes.find(x=>x.id===t.dataset.open); if (a) openEditor(a); return; }
+  if (t.dataset.add){ openPicker(t.dataset.add); return; }
+  if (t.dataset.rm){ const [k,id]=t.dataset.rm.split('|'); SL.slots[k]=(SL.slots[k]||[]).filter(x=>x!==id); renderSL(); saveSL(); return; }
+  if (t.dataset.up){ const [k,i]=t.dataset.up.split('|'); const arr=[...(SL.slots[k]||[])].filter(id=>athletes.some(a=>a.id===id)); const n=+i; if(n>0){ [arr[n-1],arr[n]]=[arr[n],arr[n-1]]; SL.slots[k]=arr; renderSL(); saveSL(); } }
+});
+
+let pkSlot = null;
+function openPicker(key){
+  pkSlot = key; const sl = SLOTS[key];
+  $('#pkTitle').textContent = `${sl.l} (${sl.a})`;
+  $('#pkHint').textContent = 'Atletas com posição principal: ' + sl.acc.join(', ') + '.';
+  $('#pkQ').value = ''; renderPicker();
+  $('#picker').hidden = false; setTimeout(()=>$('#pkQ').focus(), 30);
+}
+function closePicker(){ $('#picker').hidden = true; pkSlot = null; }
+function renderPicker(){
+  const sl = SLOTS[pkSlot], q = norm($('#pkQ').value), inSlot = new Set(SL.slots[pkSlot]||[]);
+  const list = athletes.filter(a => fitsSlot(a, sl) && (!q || norm(a.nome+' '+a.clube).includes(q))).sort((a,b)=>a.nome.localeCompare(b.nome,'pt'));
+  $('#pkList').innerHTML = list.length ? list.map(a => `<button type="button" class="pk-item" data-pick-a="${esc(a.id)}" style="--c:${colorOf(group(a.posicao))}" ${inSlot.has(a.id)?'disabled':''}>
+      <span class="thumb">${photoHTML(a)}</span>
+      <span class="t"><b>${esc(a.nome)}</b><span>${esc(a.clube||'—')} · ${esc(a.posicao||'')} · ${esc(compOf(a))}</span></span>
+      <span class="add">${inSlot.has(a.id)?'Já na lista':'+ Adicionar'}</span></button>`).join('')
+    : `<div class="empty">Nenhum atleta com essa posição principal${q?' e essa busca':''}. Ajuste a posição principal no cadastro do atleta.</div>`;
+}
+$('#pkQ').addEventListener('input', renderPicker);
+$('#pkClose').onclick = closePicker;
+$('#picker').addEventListener('click', e => { if (e.target.id==='picker') closePicker(); });
+$('#pkList').addEventListener('click', e => {
+  const b = e.target.closest('[data-pick-a]'); if (!b || b.disabled) return;
+  SL.slots[pkSlot] = [...(SL.slots[pkSlot]||[]), b.dataset.pickA];
+  renderPicker(); renderSL(); saveSL(); toast('Jogador adicionado à shortlist');
+});
+document.addEventListener('keydown', e => { if (e.key==='Escape' && !$('#picker').hidden) closePicker(); });
+
+/* ---------- Modo claro / escuro ---------- */
+function applyMode(m){
+  const light = m === 'light';
+  if (light) document.documentElement.setAttribute('data-mode','light'); else document.documentElement.removeAttribute('data-mode');
+  $('#btnModeTxt').textContent = light ? 'Modo escuro' : 'Modo claro';
+  try{ localStorage.setItem('ba_mode', light ? 'light' : 'dark'); }catch(e){}
+}
+applyMode(document.documentElement.getAttribute('data-mode') === 'light' ? 'light' : 'dark');
+$('#btnMode').onclick = () => applyMode(document.documentElement.getAttribute('data-mode') === 'light' ? 'dark' : 'light');
+
+/* ---------- Boot ---------- */
+renderStrip();
+setPage(page);
+(async () => {
+  const c = window.claude;
+  if (!c || !c.use){ $('#sub').textContent='Base indisponível nesta visualização.'; $('#list').innerHTML='<div class="empty">Abra a página publicada para acessar o banco de dados.</div>'; return; }
+  [db, assets, downloads] = await Promise.all(['db','assets','downloads'].map(n => c.use(n).catch(()=>null)));
+  if (!downloads) $('#btnExport').hidden = true; else $('#btnExport').disabled = false;
+  try{ const u0 = await c.use('user'); if (u0 && await u0.isOwner() && downloads) $('#btnBackup').hidden = false; }catch(e){}
+  if (!db){ $('#sub').textContent='Base indisponível nesta visualização.'; $('#list').innerHTML='<div class="empty">Não foi possível conectar ao banco de dados. Recarregue a página.</div>'; return; }
+  $('#btnNew').disabled = false;
+  // quem só pode visualizar não vê os controles de edição
+  try{
+    const u = await c.use('user');
+    const w = u ? await u.can('data.write') : null;
+    if (w === false){
+      document.body.classList.add('ro');
+      $('#slTitle').readOnly = true; $('#slForms').disabled = true;
+      $('#sub').insertAdjacentHTML('afterend', '<div class="ro-tag">Somente visualização · peça acesso de edição ao responsável</div>');
+    }
+  }catch(e){}
+  slRef = db.doc('shortlists/principal');
+  db.collection('shortlistsSalvas').onSnapshot(snap => {
+    SAVED = snap.docs.map(d => ({ id:d.id, ...d.data() })).sort((a,b)=>(b.janela&&b.janela.inicio||'').localeCompare(a.janela&&a.janela.inicio||''));
+    renderSaved();
+  }, () => {});
+  slRef.onSnapshot(d => {
+    if (d.exists){ const v = d.data(); SL = { titulo: v.titulo || 'Shortlist', formacao: v.formacao || '4-3-3', slots: JSON.parse(JSON.stringify(v.slots || {})), janela: v.janela || null }; }
+    renderSL();
+  }, () => {});
+  db.collection('atletas').onSnapshot(snap => {
+    athletes = snap.docs.map(d => ({ id:d.id, ...d.data() })).filter(a => a.nome);
+    renderAll();
+  }, err => {
+    $('#msg').innerHTML = `<div class="notice">A conexão com a base foi interrompida. Recarregue a página para continuar.</div>`;
+  });
+})();
+})();
+</script>
+
+</body>
+</html>
