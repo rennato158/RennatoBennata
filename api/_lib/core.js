@@ -36,7 +36,14 @@ export function redis() {
     const r = new Redis({ url: info.url, token: info.token, automaticDeserialization: false });
     _redis = {
       hget: async (k, f) => fromStr(await r.hget(k, f)),
-      hgetall: async k => { const o = await r.hgetall(k); if (!o) return null; const out = {}; for (const [a, b] of Object.entries(o)) out[a] = fromStr(b); return out; },
+      hgetall: async k => {
+        const o = await r.hgetall(k);
+        if (!o) return null;
+        // Sem desserialização automática o Upstash devolve [campo, valor, campo, valor...]
+        const pares = Array.isArray(o) ? Array.from({ length: Math.floor(o.length / 2) }, (_, i) => [o[2 * i], o[2 * i + 1]]) : Object.entries(o);
+        if (!pares.length) return null;
+        const out = {}; for (const [a, b] of pares) out[a] = fromStr(b); return out;
+      },
       hset: (k, o) => r.hset(k, Object.fromEntries(Object.entries(o).map(([a, b]) => [a, toStr(b)]))),
       hdel: (k, f) => r.hdel(k, f), incr: k => r.incr(k), expire: (k, s) => r.expire(k, s), del: k => r.del(k),
     };
