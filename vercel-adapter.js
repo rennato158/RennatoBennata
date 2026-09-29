@@ -40,9 +40,9 @@
 
   const css = `
   #baLogin{position:fixed;inset:0;z-index:100;display:grid;grid-template-columns:1.1fr 1fr;background:var(--bg,#08070B);overflow:auto}
-  #baLogin .brand{position:relative;overflow:hidden;padding:48px clamp(24px,5vw,64px);display:flex;flex-direction:column;justify-content:space-between;gap:28px;
-    background:radial-gradient(90% 70% at 20% 0,rgba(139,92,246,.35),transparent 60%),radial-gradient(80% 60% at 100% 100%,rgba(76,29,149,.45),transparent 60%),#0B0912;color:#F3F0FA}
-  #baLogin .brand svg.field{position:absolute;right:-8%;bottom:-6%;width:78%;max-width:620px;opacity:.35;color:#B794FF;pointer-events:none}
+  #baLogin .brand{position:relative;overflow:hidden;padding:48px clamp(24px,5vw,64px);display:flex;flex-direction:column;justify-content:center;gap:28px;
+    background:#0B0912;color:#F3F0FA}
+  #baLogin .brand svg.field{position:relative;display:block;width:100%;max-width:560px;height:auto;margin:8px 0;pointer-events:none}
   #baLogin .brand h1{font-family:var(--display);font-weight:700;text-transform:uppercase;font-size:clamp(40px,6vw,76px);line-height:.92;margin:10px 0 0;letter-spacing:.01em}
   #baLogin .brand h1 span{color:#B794FF}
   #baLogin .brand .eyebrow{color:#B794FF}
@@ -58,7 +58,7 @@
   #baLogin .or::before,#baLogin .or::after{content:"";flex:1;height:1px;background:var(--line-2)}
   #baLogin .err{color:var(--danger,#FF7A85);font-size:13px;min-height:18px}
   #baLogin .toggle{background:none;border:0;color:var(--accent-2);cursor:pointer;font-size:13px;padding:0;text-align:left}
-  @media (max-width:820px){ #baLogin{grid-template-columns:1fr;grid-template-rows:auto 1fr} #baLogin .brand{padding:32px 20px 28px} #baLogin .brand svg.field{width:120%;right:-40%;opacity:.22} #baLogin .brand p{display:none} #baLogin .side{place-items:start center;padding-top:28px} }
+  @media (max-width:820px){ #baLogin{grid-template-columns:1fr;grid-template-rows:auto 1fr} #baLogin .brand{padding:32px 20px 28px} #baLogin .brand svg.field{max-width:420px;margin:0 auto} #baLogin .side{place-items:start center;padding-top:28px} }
   .ba-user{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-2);border:1px solid var(--line-2);border-radius:999px;padding:4px 6px 4px 12px}
   .ba-user b{color:var(--ink);font-weight:600}
   .ba-user .papel{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-2)}
@@ -73,7 +73,31 @@
   });
 
   let GOOGLE_ID = '';
-  const FIELD_SVG = `<svg class="field" viewBox="0 0 400 260" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="4" y="4" width="392" height="252" rx="3"/><line x1="200" y1="4" x2="200" y2="256"/><circle cx="200" cy="130" r="38"/><circle cx="200" cy="130" r="2.5" fill="currentColor"/><rect x="4" y="68" width="62" height="124"/><rect x="4" y="100" width="22" height="60"/><rect x="334" y="68" width="62" height="124"/><rect x="374" y="100" width="22" height="60"/><circle cx="96" cy="84" r="5" fill="currentColor" stroke="none"/><circle cx="96" cy="176" r="5" fill="currentColor" stroke="none"/><circle cx="150" cy="130" r="5" fill="currentColor" stroke="none"/><circle cx="252" cy="92" r="5" fill="currentColor" stroke="none"/><circle cx="252" cy="168" r="5" fill="currentColor" stroke="none"/><circle cx="310" cy="130" r="5" fill="currentColor" stroke="none"/><path d="M96 84 150 130 252 92 310 130M96 176 150 130 252 168" opacity=".45" stroke-dasharray="4 5"/></svg>`;
+  const FIELD_SVG = `<svg class="field" viewBox="0 0 400 270" fill="none" aria-hidden="true">
+    <defs><clipPath id="baLens"><circle cx="262" cy="118" r="58"/></clipPath>
+      <radialGradient id="baGlow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#B794FF" stop-opacity=".55"/><stop offset="1" stop-color="#B794FF" stop-opacity="0"/></radialGradient></defs>
+    <g stroke="#8B5CF6" stroke-width="1.4" opacity=".75">
+      <rect x="6" y="6" width="388" height="244" rx="3"/><line x1="200" y1="6" x2="200" y2="250"/><circle cx="200" cy="128" r="36"/>
+      <rect x="6" y="66" width="60" height="124"/><rect x="6" y="98" width="22" height="60"/><rect x="334" y="66" width="60" height="124"/><rect x="372" y="98" width="22" height="60"/>
+      <path d="M66 104a30 30 0 0 1 0 48M334 104a30 30 0 0 0 0 48"/>
+    </g>
+    <circle cx="200" cy="128" r="2.5" fill="#8B5CF6"/>
+    <g fill="#8B5CF6" opacity=".55"><circle cx="40" cy="128" r="4"/><circle cx="96" cy="70" r="4"/><circle cx="92" cy="186" r="4"/><circle cx="150" cy="128" r="4"/><circle cx="170" cy="62" r="4"/><circle cx="168" cy="196" r="4"/><circle cx="236" cy="200" r="4"/><circle cx="330" cy="44" r="4"/><circle cx="318" cy="210" r="4"/></g>
+    <g clip-path="url(#baLens)">
+      <rect x="200" y="56" width="124" height="124" fill="#0B0912"/>
+      <g transform="translate(262 118) scale(1.9) translate(-262 -118)" stroke="#B794FF" stroke-width="1" opacity=".9">
+        <line x1="200" y1="6" x2="200" y2="250"/><circle cx="200" cy="128" r="36"/><rect x="334" y="66" width="60" height="124"/>
+      </g>
+      <circle cx="268" cy="112" r="24" fill="url(#baGlow)"/>
+      <circle cx="268" cy="112" r="7" fill="#B794FF"/>
+      <circle cx="268" cy="112" r="14" stroke="#B794FF" stroke-width="1.5" stroke-dasharray="3 4"/>
+      <circle cx="230" cy="150" r="5" fill="#8B5CF6" opacity=".6"/><circle cx="300" cy="84" r="5" fill="#8B5CF6" opacity=".6"/>
+    </g>
+    <circle cx="262" cy="118" r="58" stroke="#B794FF" stroke-width="7"/>
+    <circle cx="262" cy="118" r="52" stroke="#8B5CF6" stroke-width="1.2" opacity=".6"/>
+    <path d="M304 160 346 202" stroke="#B794FF" stroke-width="14" stroke-linecap="round"/>
+    <path d="M304 160 314 170" stroke="#0B0912" stroke-width="4" stroke-linecap="round" opacity=".6"/>
+  </svg>`;
 
   async function afterLogin(user) {
     const wasLogged = !!ME; ME = user; $('#baLogin').hidden = true;
@@ -104,11 +128,11 @@
     let el = $('#baLogin');
     if (!el) {
       el = document.createElement('div'); el.id = 'baLogin';
-      el.innerHTML = `<section class="brand">${FIELD_SVG}
+      el.innerHTML = `<section class="brand">
           <div style="position:relative"><div class="eyebrow">Observação técnica · Anderson Batatais</div>
           <h1>Banco de<br><span>Atletas</span></h1>
-          <p>Cadastro de atletas, campograma por função, timeline de status e shortlist por sistema de jogo, com relatórios em PDF e Excel.</p></div>
-          <div class="feats"><span>Cadastro</span><span>Campograma</span><span>Shortlist</span><span>PDF e Excel</span></div>
+          <p>Sistema de monitoramento de atletas em observações.</p></div>
+          ${FIELD_SVG}
         </section>
         <section class="side"><div class="box">
           <div><h2>Entrar</h2><p class="lead">Use a conta Google ou o email cadastrado pelo administrador.</p></div>
