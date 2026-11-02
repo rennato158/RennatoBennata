@@ -552,7 +552,14 @@ body:not([data-mod="tr"]) #trView,body:not([data-mod="tr"]) .tr-only{display:non
 .tlista.on{cursor:default;border-color:var(--line-2);color:var(--ink-2)}
 .tl-row{margin-top:10px}
 .tl-row .tlista{width:100%;justify-content:center;padding:7px 10px;font-size:12.5px;border-radius:8px}
-body.ro .tlista.add,body.ro #trListaBtn{display:none!important}
+body.ro .tlista.add,body.ro #trListaBtn,body.ro #btnTrFotos{display:none!important}
+.ftprev{max-height:400px;overflow:auto}
+.ftprev table{min-width:620px}
+.ftprev td,.ftprev th{padding:6px 8px;font-size:12px;vertical-align:middle}
+.ftprev th{cursor:default;position:static}
+.ftprev img.ft{width:52px;height:52px;object-fit:cover;border-radius:8px;display:block;background:#fff}
+.ftprev select{max-width:240px;border:1px solid var(--line-2);background:var(--bg);color:var(--ink);border-radius:6px;padding:5px 6px;font-size:12px}
+.ftprev tr.off td{opacity:.55}
 .ptag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 10px 3px 8px;border-radius:999px;color:var(--c);border:1px solid color-mix(in srgb,var(--c) 55%,transparent);background:color-mix(in srgb,var(--c) 14%,transparent);white-space:nowrap}
 .ptag::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--c)}
 .ptag.sec{opacity:.75;font-weight:500}
@@ -740,6 +747,10 @@ body.ro #btnTrNew,body.ro #btnTrImport,body.ro #trEdit,body.ro #trDelZone,body.r
       <button class="btn tr-only" id="btnTrImport" type="button" disabled>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14"/></svg>
         Importar JSON
+      </button>
+      <button class="btn tr-only" id="btnTrFotos" type="button" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="m21 17-5-5-8 7"/></svg>
+        Importar fotos
       </button>
       <button class="btn tr-only" id="btnTrExport" type="button" disabled>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
@@ -1180,6 +1191,17 @@ body.ro #btnTrNew,body.ro #btnTrImport,body.ro #trEdit,body.ro #trDelZone,body.r
       <label><input type="radio" name="jsModo" value="atualizar"> Substituir pelos dados do arquivo</label></div>
     <div class="jsprev" id="jsPrev"></div>
     <div class="row" style="justify-content:space-between;align-items:center"><div class="evmeta" id="jsProg"></div><button type="button" class="btn primary" id="jsGo" hidden>Importar</button></div>
+  </div>
+</div>
+
+<div class="picker" id="trFtDlg" hidden role="dialog" aria-modal="true" aria-labelledby="trFtTitle">
+  <div class="pk-box" style="width:min(820px,100%)">
+    <div class="pk-head"><div><div class="eyebrow">Atualização em lote</div><h3 id="trFtTitle">Importar fotos dos treinadores</h3></div><button type="button" class="btn" id="trFtClose">Fechar</button></div>
+    <div class="hint" style="margin:0">Selecione várias fotos de uma vez. Cada arquivo é associado ao treinador pelo <b>nome do arquivo</b> (ex.: <i>leo-conde.jpg</i> ou <i>Léo Condé.png</i>). Confira e corrija as associações antes de gravar. A foto é recortada automaticamente no formato do cartão; depois é possível ajustar o recorte na ficha.</div>
+    <div class="jsdrop" id="ftDrop">Arraste as fotos aqui ou <button type="button" class="btn primary" id="ftPick">Escolher fotos</button><input type="file" id="ftFile" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden></div>
+    <div class="hint" id="ftState" style="margin:0"></div>
+    <div class="ftprev" id="ftPrev"></div>
+    <div class="row" style="justify-content:space-between;align-items:center"><div class="evmeta" id="ftProg"></div><button type="button" class="btn primary" id="ftGo" hidden>Gravar fotos</button></div>
   </div>
 </div>
 
@@ -3399,10 +3421,96 @@ $('#jsModelo').onclick = async () => {
   }catch(err){ if (!(err && err.code === 'declined')) toast('Não foi possível baixar o modelo.'); }
 };
 
+/* ---------- Importar fotos em lote ---------- */
+let ftItems = [];
+const ftTok = s => norm(s).replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter(w => w && !/^\d+$/.test(w) && !['de','da','do','dos','das','foto','img','image','treinador'].includes(w));
+function ftMatch(fname){
+  const base = fname.replace(/\.[a-z0-9]+$/i, ''), k = ftTok(base).join(' ');
+  if (!k) return null;
+  const ex = T.filter(t => [t.nomeEsportivo, t.nome].some(n => n && ftTok(n).join(' ') === k));
+  if (ex.length === 1) return ex[0];
+  const fw = ftTok(base);
+  const sub = T.filter(t => { const w = new Set(ftTok((t.nomeEsportivo || '') + ' ' + (t.nome || ''))); return fw.every(x => w.has(x)); });
+  if (sub.length === 1) return sub[0];
+  const sub2 = T.filter(t => { const tw = ftTok(t.nomeEsportivo || t.nome || ''); return tw.length && tw.every(x => fw.includes(x)); });
+  return sub2.length === 1 ? sub2[0] : null;
+}
+function ftAdd(files){
+  const imgs = [...files].filter(f => /^image\/(png|jpeg|webp|gif)$/.test(f.type));
+  const ign = files.length - imgs.length;
+  imgs.forEach(f => { const t = ftMatch(f.name); ftItems.push({ file: f, url: URL.createObjectURL(f), tid: t ? t.id : '', on: !!t && !photoSrc(t) }); });
+  ftRender(ign ? `${ign} arquivo(s) ignorado(s) por não serem imagens JPG, PNG, WEBP ou GIF.` : '');
+}
+function ftRender(extra){
+  const opts = T.slice().sort((a, b) => nomeDe(a).localeCompare(nomeDe(b), 'pt'));
+  const usados = {}; ftItems.forEach(i => { if (i.tid && i.on) usados[i.tid] = (usados[i.tid] || 0) + 1; });
+  const nOk = ftItems.filter(i => i.on && i.tid).length, nSem = ftItems.filter(i => !i.tid).length;
+  $('#ftState').innerHTML = ftItems.length ? `${ftItems.length} foto(s) · <b>${nOk}</b> para gravar${nSem ? ` · <span class="err">${nSem} sem treinador associado</span>` : ''}${extra ? '<br>' + esc(extra) : ''}` : esc(extra || '');
+  $('#ftPrev').innerHTML = ftItems.length ? `<div class="tablewrap"><table><thead><tr><th></th><th>Foto</th><th>Arquivo</th><th>Treinador</th><th>Situação</th></tr></thead><tbody>
+    ${ftItems.map((i, n) => { const t = T.find(x => x.id === i.tid); const dup = i.tid && i.on && usados[i.tid] > 1;
+      return `<tr class="${i.on && i.tid ? '' : 'off'}"><td><input type="checkbox" data-ft-on="${n}" ${i.on ? 'checked' : ''} ${i.tid ? '' : 'disabled'}></td><td><img class="ft" src="${i.url}" alt=""></td><td>${esc(i.file.name)}</td>
+        <td><select data-ft-t="${n}"><option value="">— escolher treinador —</option>${opts.map(o => `<option value="${esc(o.id)}" ${o.id === i.tid ? 'selected' : ''}>${esc(nomeDe(o))}${o.clube ? ' · ' + esc(o.clube) : ''}</option>`).join('')}</select></td>
+        <td class="evmeta">${!t ? 'Não reconhecido: escolha o treinador' : dup ? '<span class="err">Mais de uma foto para o mesmo treinador</span>' : photoSrc(t) ? (i.on ? 'Vai substituir a foto atual' : 'Já tem foto (marque para substituir)') : 'Sem foto: será adicionada'}</td></tr>`; }).join('')}
+    </tbody></table></div>` : '';
+  const dupAny = Object.values(usados).some(v => v > 1);
+  $('#ftGo').hidden = !nOk; $('#ftGo').disabled = dupAny; $('#ftGo').textContent = `Gravar ${nOk} foto(s)`;
+}
+$('#ftPrev').addEventListener('change', e => {
+  const c = e.target.closest('[data-ft-on]'), sel = e.target.closest('[data-ft-t]');
+  if (c) ftItems[+c.dataset.ftOn].on = c.checked;
+  if (sel){ const i = ftItems[+sel.dataset.ftT]; i.tid = sel.value; const t = T.find(x => x.id === i.tid); i.on = !!t && (!photoSrc(t) || i.on); }
+  ftRender();
+});
+function ftReset(){ ftItems.forEach(i => URL.revokeObjectURL(i.url)); ftItems = []; $('#ftProg').textContent = ''; ftRender(''); }
+$('#btnTrFotos').onclick = () => { ftReset(); $('#trFtDlg').hidden = false; };
+$('#trFtClose').onclick = () => { $('#trFtDlg').hidden = true; ftReset(); };
+$('#ftPick').onclick = () => $('#ftFile').click();
+$('#ftFile').addEventListener('change', e => { ftAdd(e.target.files); e.target.value = ''; });
+const ftDrop = $('#ftDrop');
+['dragover','dragenter'].forEach(ev => ftDrop.addEventListener(ev, e => { e.preventDefault(); ftDrop.classList.add('over'); }));
+['dragleave','drop'].forEach(ev => ftDrop.addEventListener(ev, () => ftDrop.classList.remove('over')));
+ftDrop.addEventListener('drop', e => { e.preventDefault(); ftAdd(e.dataTransfer.files || []); });
+async function ftAutoCrop(file){ // recorte quadrado automático, igual ao padrão do recorte manual
+  const bmp = await createImageBitmap(file);
+  const w = bmp.width, h = bmp.height, side = Math.min(w, h);
+  const hx = side / (2 * w), hy = side / (2 * h), cl = (v, m) => Math.min(Math.max(v, m), 1 - m);
+  const cx = cl(.5, hx), cy = cl(h > w ? .38 : .5, hy);
+  const c = document.createElement('canvas'); c.width = c.height = 640;
+  const ctx = c.getContext('2d'); ctx.imageSmoothingQuality = 'high'; ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, 640, 640);
+  ctx.drawImage(bmp, cx * w - side / 2, cy * h - side / 2, side, side, 0, 0, 640, 640);
+  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.9));
+  return { blob, crop: { z: 1, cx: +cx.toFixed(4), cy: +cy.toFixed(4) } };
+}
+$('#ftGo').onclick = async () => {
+  if (!db || !assets) return;
+  const fila = ftItems.filter(i => i.on && i.tid);
+  $('#ftGo').disabled = true; $('#trFtClose').disabled = true;
+  let ok = 0; const falhas = [];
+  for (const [n, i] of fila.entries()){
+    const t = T.find(x => x.id === i.tid); if (!t) continue;
+    $('#ftProg').textContent = `Enviando ${n + 1} de ${fila.length}: ${nomeDe(t)}…`;
+    try{
+      const r = await ftAutoCrop(i.file);
+      const orig = await BA.resizeImage(i.file, 1600);
+      const o = await assets.upload(orig, { type: orig.type || i.file.type });
+      const c = await assets.upload(r.blob, { type: 'image/jpeg' });
+      const old = [t.fotoAsset, t.fotoOrig].filter(Boolean);
+      await db.collection('treinadores').doc(t.id).update({ fotoAsset: c.id, fotoOrig: o.id, fotoCrop: r.crop, atualizadoEm: new Date().toISOString() });
+      old.forEach(x => assets.delete(x).catch(() => {}));
+      i.on = false; i.feito = true; ok++;
+    }catch(err){ falhas.push(`${nomeDe(t)}: ${BA.upErr(err)}`); if (err && err.code === 'invalid_argument') break; }
+  }
+  ftItems = ftItems.filter(i => { if (i.feito){ URL.revokeObjectURL(i.url); return false; } return true; });
+  $('#trFtClose').disabled = false;
+  $('#ftProg').innerHTML = `<b>${ok}</b> foto(s) gravada(s).` + (falhas.length ? ` <span class="err">Falharam: ${esc(falhas.join(' · '))}</span>` : '');
+  toast(`${ok} foto(s) de treinadores atualizada(s)`);
+  ftRender();
+};
+
 /* Fechar diálogos com Esc */
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape' || !$('#cropper').hidden) return;
-  for (const id of ['#trEvDlg','#trHxDlg','#trOgDlg','#trJsDlg','#trCmpDlg']) if (!$(id).hidden){ $(id).hidden = true; return; }
+  for (const id of ['#trEvDlg','#trHxDlg','#trOgDlg','#trJsDlg','#trFtDlg','#trCmpDlg']) if (!$(id).hidden){ $(id).hidden = true; return; }
   if (!$('#trScrim').hidden) closeEditor();
 });
 
@@ -3449,7 +3557,7 @@ async function init(){
   BA = window.BA;
   ({ db, assets, downloads } = BA);
   try { const u = BA.user; if (u){ const me = await u.me(); meName = (me && (me.name || me.email)) || ''; } } catch(e){}
-  $('#btnTrNew').disabled = false; $('#btnTrImport').disabled = false; $('#btnTrExport').disabled = !downloads;
+  $('#btnTrNew').disabled = false; $('#btnTrImport').disabled = false; $('#btnTrFotos').disabled = !assets; $('#btnTrExport').disabled = !downloads;
   const onErr = () => { $('#trMsg').innerHTML = '<div class="notice">A conexão com a base de treinadores foi interrompida. Recarregue a página.</div>'; };
   const refreshOpen = () => { if (!$('#trScrim').hidden && editing){ const t = T.find(x => x.id === editing.id); if (t && !editMode){ editing = t; } renderHist(); renderAllEvals(); } };
   db.collection('treinadores').onSnapshot(s => { T = s.docs.map(d => ({ id:d.id, ...d.data() })).filter(t => t.nome || t.nomeEsportivo); loaded = true; renderTr(); }, onErr);
