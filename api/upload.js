@@ -1,4 +1,4 @@
-// POST   /api/upload           (corpo = bytes da imagem, header x-type = tipo) → { id, url }
+// POST   /api/upload           (corpo = bytes da imagem, header x-type = tipo, x-id opcional) → { id, url }
 // DELETE /api/upload?id=...    → remove a foto
 import { put, del } from '@vercel/blob';
 import crypto from 'node:crypto';
@@ -22,7 +22,10 @@ export default handle(async (req, res) => {
   const buf = await readRaw(req);
   if (!buf.length) throw httpError(400, 'Arquivo vazio.');
   if (buf.length > 4_000_000) throw httpError(413, 'Arquivo grande demais (máx. 4 MB).');
-  const id = crypto.randomBytes(16).toString('hex');
+  // O app pode mandar o próprio identificador (fotos tiradas sem internet já são usadas com ele).
+  const pedido = String(req.headers['x-id'] || '');
+  const id = /^[a-f0-9]{32}$/.test(pedido) ? pedido : crypto.randomBytes(16).toString('hex');
+  if (await redis().hget('blobs', id)) return send(res, 200, { id, url: '/_blob/' + id, sizeBytes: buf.length, contentType: type, repetido: true });
   const blob = await put(`fotos/${id}.${TYPES[type]}`, buf, { access: 'public', contentType: type, addRandomSuffix: true, token: blobToken() });
   await redis().hset('blobs', { [id]: blob.url });
   send(res, 200, { id, url: '/_blob/' + id, sizeBytes: buf.length, contentType: type });
