@@ -972,7 +972,7 @@ body.ro #btnTrNew,body.ro #btnTrImport,body.ro #trEdit,body.ro #trDelZone,body.r
 <div class="scrim" id="trScrim" hidden>
   <aside class="panel tpanel" id="trPanel" role="dialog" aria-modal="true" aria-labelledby="trTitle">
     <div class="panel-head" id="trHead">
-      <div><div class="eyebrow"><span id="trEyebrow">Novo treinador</span><span class="mode-tag" id="trModeTag">Visualização</span></div><h2 id="trTitle">Cadastrar treinador</h2></div>
+      <div><div class="eyebrow"><span id="trEyebrow">Novo treinador</span><span class="mode-tag" id="trModeTag">Visualização</span></div><h2 id="trTitle">Cadastrar treinador</h2><div class="evmeta" id="trUpd"></div></div>
       <button class="btn" type="button" id="trClose" aria-label="Fechar">Fechar</button>
     </div>
     <nav class="ttabs" id="trTabs" role="tablist" aria-label="Seções da ficha"></nav>
@@ -2596,10 +2596,13 @@ function setEditMode(on){
 }
 $('#trEdit').onclick = () => setEditMode(true);
 
+const ultAtual = t => t ? (t.ultimaAtualizacao || (t.atualizadoEm ? t.atualizadoEm.slice(0, 10) : '')) : '';
+function renderUpd(t){ const d = ultAtual(t); $('#trUpd').textContent = d ? `Última atualização dos dados: ${fmtD(d)}` : ''; }
 function openEditor(t, opts={}){
   editing = t || null; dupOK = false; $('#trDupZone').innerHTML = ''; $('#trErr').textContent = ''; $('#trPhState').textContent = '';
   $('#trEyebrow').textContent = t ? 'Ficha do treinador' : 'Novo treinador';
   $('#trTitle').textContent = t ? nomeDe(t) : 'Cadastrar treinador';
+  renderUpd(t);
   const v = (id, val) => { $(id).value = val ?? ''; };
   v('#trNome', t && t.nome); v('#trNomeEsp', t && t.nomeEsportivo); v('#trNac', t && t.nacionalidade); v('#trNasc', t && t.nascimento);
   v('#trClube', t && t.clube); $('#trSit').value = (t && t.situacao) || 'Não informado'; v('#trLic', t && t.licenca); v('#trObs', t && t.observacoes);
@@ -2774,7 +2777,7 @@ async function save(){
     filosofia: $('#trFilo').value.trim(),
     sistemaPrincipal: sisPrincipal(), sistemasAlternativos: sisAlt.filter(s => s !== sisPrincipal()), flexibilidade: $('#trFlex').value, sistemasObs: $('#trSisObs').value.trim(),
     modelo: { estrutura: $('#trMEst').value.trim(), comBola: $('#trMCom').value.trim(), semBola: $('#trMSem').value.trim(), bolasParadas: $('#trMBp').value.trim() },
-    ogolUrl: (editing && editing.ogolUrl) || '',
+    ogolUrl: (editing && editing.ogolUrl) || '', ultimaAtualizacao: today(),
     criadoEm: (editing && editing.criadoEm) || now, atualizadoEm: now,
   };
   const id = editing ? editing.id : slug(nomeEsp) + '-' + Math.random().toString(36).slice(2, 6);
@@ -2786,7 +2789,7 @@ async function save(){
     toast(editing ? 'Ficha atualizada' : 'Treinador cadastrado');
     const t = { id, ...data };
     if (!editing){ T = T.concat(t); openEditor(t, { sec: curSec }); }
-    else { editing = t; $('#trTitle').textContent = nomeDe(t); setEditMode(false); }
+    else { editing = t; $('#trTitle').textContent = nomeDe(t); renderUpd(t); setEditMode(false); }
   }catch(e){ err(e && e.code === 'invalid_argument' ? 'Você não tem permissão para alterar cadastros.' : 'Não foi possível salvar. Tente novamente.'); }
   finally{ $('#trSave').disabled = !editMode; }
 }
@@ -3054,6 +3057,7 @@ const JS_ALIAS = {
   perfis:['perfis'], perfilPredominante:['perfilpredominante','perfil','perfilprincipal'], perfilSecundario:['perfilsecundario'], filosofia:['filosofia','justificativa','justificativaperfil'],
   sistemaPrincipal:['sistemaprincipal','sistema'], sistemasAlternativos:['sistemasalternativos','alternativos','sistemas'], flexibilidade:['flexibilidade'], sistemasObs:['sistemasobs'],
   modelo:['modelo','modelodejogo'], ogolUrl:['ogolurl','ogol','linkogol'],
+  ultimaAtualizacao:['ultimaatualizacao','dataatualizacao','datadeatualizacao','dataultimaatualizacao','datadaultimaatualizacao','atualizadoem','atualizacao','lastupdate','lastupdated','updatedat','datareferencia'],
   historico:['historico','historicoprofissional','carreira','trabalhos','experiencias','clubes','clubesanteriores','career','historicodetrabalhos'], avaliacoes:['avaliacoes'] };
 const JS_SKIP = ['idade','age','id','aproveitamento','totais','total'];
 const JS_GRUPOS = ['identificacao','dadosdeidentificacao','dadosidentificacao','dadospessoais','dados','identification','perfil'];
@@ -3158,6 +3162,15 @@ function jsTreinador(o, idx, vistos){
     else { const m = {}; for (const [k, v] of Object.entries(src.modelo)){ const kk = ['estrutura','comBola','semBola','bolasParadas'].find(x => norm(x) === norm(k).replace(/[\s_]/g, '')); if (kk && jsStr(v)) m[kk] = jsStr(v); }
       if (Object.keys(m).length) d.modelo = m; }
   }
+  // data da última atualização dos dados (do treinador ou, se ausente, do arquivo)
+  if (src.ultimaAtualizacao != null && jsStr(src.ultimaAtualizacao) !== ''){
+    const u = jsData(src.ultimaAtualizacao);
+    if (u === null) r.avisos.push(`Data da última atualização inválida ("${jsStr(src.ultimaAtualizacao)}"); usei a do arquivo.`);
+    else if (u > today()) r.avisos.push('Data da última atualização no futuro; usei a do arquivo.');
+    else d.ultimaAtualizacao = u;
+  }
+  if (!d.ultimaAtualizacao && jsArqData) d.ultimaAtualizacao = jsArqData;
+  if (!d.ultimaAtualizacao) r.avisos.push('Data da última atualização não informada.');
   // duplicidade: na base e dentro do próprio arquivo
   const mesmo = t => (d.nome && norm(t.nome) === norm(d.nome)) || (d.nascimento && t.nascimento === d.nascimento && norm(nomeDe(t)) === norm(d.nomeEsportivo || d.nome));
   if (vistos.some(mesmo)){ r.erro = 'Treinador repetido dentro do arquivo.'; return r; }
@@ -3235,7 +3248,7 @@ function jsTreinador(o, idx, vistos){
   return r;
 }
 
-let jsRows = [], jsOrig = '';
+let jsRows = [], jsOrig = '', jsArqData = '', jsArqAviso = '';
 function jsReset(msg){ jsRows = []; $('#jsPrev').innerHTML = ''; $('#jsGo').hidden = true; $('#jsModo').hidden = true; $('#jsState').textContent = msg || ''; }
 function jsAnalisar(txt, origem){
   jsReset();
@@ -3243,6 +3256,11 @@ function jsAnalisar(txt, origem){
   catch(e){ $('#jsState').innerHTML = `<span class="err">Arquivo JSON inválido: ${esc(e.message)}</span>`; return; }
   const lista = jsLista(raw);
   if (!lista || !lista.length){ $('#jsState').innerHTML = '<span class="err">Nenhum treinador encontrado. O arquivo deve ser uma lista de treinadores ou um objeto com a chave "treinadores".</span>'; return; }
+  jsArqData = ''; jsArqAviso = '';
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)){
+    const k = Object.keys(raw).find(k => jsKey(k) === 'ultimaAtualizacao');
+    if (k){ const d = jsData(raw[k]); if (d === null) jsArqAviso = `Data da última atualização do arquivo inválida ("${jsStr(raw[k])}"); use AAAA-MM-DD ou DD/MM/AAAA.`; else if (d > today()) jsArqAviso = 'Data da última atualização do arquivo está no futuro; ignorada.'; else jsArqData = d; }
+  }
   const vistos = []; jsRows = lista.map((o, i) => jsTreinador(o, i, vistos));
   jsRender(origem);
 }
@@ -3250,12 +3268,14 @@ const jsVazio = v => v == null || v === '' || (Array.isArray(v) && !v.length) ||
 function jsUpd(r, modo){ // campos que serão gravados num cadastro existente
   const e = r.existente, d = r.dados, u = {};
   for (const [k, v] of Object.entries(d)){
+    if (k === 'ultimaAtualizacao'){ continue; }
     if (k === 'perfis' || k === 'modelo'){
       const base = e[k] || {}, m = modo === 'atualizar' ? Object.assign({}, base, v) : Object.assign({}, v, Object.fromEntries(Object.entries(base).filter(([, x]) => x !== '' && x != null)));
       if (JSON.stringify(m) !== JSON.stringify(base)) u[k] = m;
     } else if (k === 'situacao' ? (modo === 'atualizar' ? v !== e[k] : (!e[k] || e[k] === 'Não informado') && v !== e[k]) : (modo === 'atualizar' ? JSON.stringify(v) !== JSON.stringify(e[k]) : jsVazio(e[k]))) u[k] = v;
   }
   if (u.perfilPredominante && modo !== 'atualizar' && e.perfilPredominante) delete u.perfilPredominante;
+  if (d.ultimaAtualizacao && d.ultimaAtualizacao > (e.ultimaAtualizacao || (e.atualizadoEm || '').slice(0, 10) || '') ) u.ultimaAtualizacao = d.ultimaAtualizacao;
   return u;
 }
 function jsRender(origem){
@@ -3263,13 +3283,14 @@ function jsRender(origem){
   const modo = ($('input[name="jsModo"]:checked') || {}).value || 'completar';
   const ok = jsRows.filter(r => !r.erro), novos = ok.filter(r => !r.existente).length, exist = ok.length - novos;
   const nh = ok.reduce((s, r) => s + r.hist.length, 0), na = ok.reduce((s, r) => s + r.avs.length, 0), ne = jsRows.length - ok.length;
-  $('#jsState').innerHTML = `${origem ? `<b>${esc(origem)}</b> · ` : ''}${jsRows.length} treinador(es) no arquivo: <b>${novos}</b> novo(s), <b>${exist}</b> já cadastrado(s)${ne ? `, <span class="err">${ne} com erro (não serão importados)</span>` : ''} · ${nh} experiência(s) e ${na} avaliação(ões) novas.`;
+  $('#jsState').innerHTML = `${jsArqAviso ? `<span class="err">${esc(jsArqAviso)}</span><br>` : ''}${origem ? `<b>${esc(origem)}</b> · ` : ''}${jsArqData ? `dados atualizados em <b>${fmtD(jsArqData)}</b> · ` : ''}${jsRows.length} treinador(es) no arquivo: <b>${novos}</b> novo(s), <b>${exist}</b> já cadastrado(s)${ne ? `, <span class="err">${ne} com erro (não serão importados)</span>` : ''} · ${nh} experiência(s) e ${na} avaliação(ões) novas.`;
   $('#jsModo').hidden = !exist;
-  $('#jsPrev').innerHTML = `<div class="tablewrap"><table><thead><tr><th>#</th><th>Treinador</th><th>Situação</th><th class="num">Histórico</th><th class="num">Avaliações</th><th>Observações</th></tr></thead><tbody>
+  $('#jsPrev').innerHTML = `<div class="tablewrap"><table><thead><tr><th>#</th><th>Treinador</th><th>Situação</th><th class="num">Histórico</th><th class="num">Avaliações</th><th>Últ. atualização</th><th>Observações</th></tr></thead><tbody>
     ${jsRows.map(r => `<tr class="${r.erro ? 'jserr' : ''}"><td>${r.idx + 1}</td><td><b>${esc(r.nomeArq || '—')}</b>${r.dados && r.dados.clube ? `<div class="evmeta">${esc(r.dados.clube)}</div>` : ''}</td>
       <td>${r.erro ? '<span class="jsb err">Erro</span>' : r.existente ? `<span class="jsb ex">Já cadastrado</span><div class="evmeta">${(n => n ? `${n} campo(s) ${modo === 'atualizar' ? 'substituído(s)' : 'preenchido(s)'}` : 'cadastro sem alteração')(Object.keys(jsUpd(r, modo)).length)}</div>` : '<span class="jsb ok">Novo</span>'}</td>
       <td class="num">${r.erro ? '' : r.hist.length + (r.hxDup ? `<div class="evmeta">${r.hxDup} já existente(s)</div>` : '')}</td>
       <td class="num">${r.erro ? '' : r.avs.length + (r.avDup ? `<div class="evmeta">${r.avDup} já existente(s)</div>` : '')}</td>
+      <td style="white-space:nowrap">${r.erro ? '' : r.dados.ultimaAtualizacao ? fmtD(r.dados.ultimaAtualizacao) : '<span class="evmeta">não informada</span>'}</td>
       <td class="jsav">${r.erro ? `<span class="err">${esc(r.erro)}</span>` : r.avisos.map(a => `<div>${esc(a)}</div>`).join('')}</td></tr>`).join('')}
     </tbody></table></div>`;
   const util = ok.filter(r => !r.existente || r.hist.length || r.avs.length || Object.keys(jsUpd(r, modo)).length).length;
@@ -3310,7 +3331,7 @@ $('#jsGo').onclick = async () => {
             situacao: d.situacao || 'Não informado', licenca: d.licenca || '', observacoes: d.observacoes || '', foto: d.foto || '', fotoAsset: null, fotoOrig: null, fotoCrop: null,
             perfis: d.perfis || {}, perfilPredominante: d.perfilPredominante || '', perfilSecundario: d.perfilSecundario || '', filosofia: d.filosofia || '',
             sistemaPrincipal: d.sistemaPrincipal || '', sistemasAlternativos: d.sistemasAlternativos || [], flexibilidade: d.flexibilidade || '', sistemasObs: d.sistemasObs || '',
-            modelo: Object.assign({ estrutura:'', comBola:'', semBola:'', bolasParadas:'' }, d.modelo), ogolUrl: d.ogolUrl || '', criadoEm: t, atualizadoEm: t });
+            modelo: Object.assign({ estrutura:'', comBola:'', semBola:'', bolasParadas:'' }, d.modelo), ogolUrl: d.ogolUrl || '', ultimaAtualizacao: d.ultimaAtualizacao || '', criadoEm: t, atualizadoEm: t });
           nT++;
         }
         for (const h of r.hist){ await db.collection('historicoTreinadores').doc(uid('hx')).set({ ...h, treinadorId: id, criadoEm: now() }); nH++; }
@@ -3329,10 +3350,11 @@ $('#jsGo').onclick = async () => {
 /* Modelo de arquivo para preenchimento */
 $('#jsModelo').onclick = async () => {
   const modelo = {
-    _instrucoes: 'Preencha a lista "treinadores" com dados reais e apague o registro de exemplo (que contém "_exemplo"). Campos vazios podem ser omitidos. Identificação: nascimento em AAAA-MM-DD ou DD/MM/AAAA; situação Empregado, Livre ou Não informado. Histórico: uma linha por trabalho; início/fim em AAAA-MM, MM/AAAA ou AAAA ("fim" vazio = trabalho atual), ou use "temporada" (ex.: 2024 ou 2023/2024). O aproveitamento é calculado automaticamente.',
+    _instrucoes: 'Preencha a lista "treinadores" com dados reais e apague o registro de exemplo (que contém "_exemplo"). Campos vazios podem ser omitidos. Identificação: nascimento em AAAA-MM-DD ou DD/MM/AAAA; situação Empregado, Livre ou Não informado. Histórico: uma linha por trabalho; início/fim em AAAA-MM, MM/AAAA ou AAAA ("fim" vazio = trabalho atual), ou use "temporada" (ex.: 2024 ou 2023/2024). O aproveitamento é calculado automaticamente. "ultimaAtualizacao": data em que os dados do arquivo foram atualizados (AAAA-MM-DD); pode ser informada também dentro de cada treinador.',
+    ultimaAtualizacao: today(),
     treinadores: [{
       _exemplo: true,
-      identificacao: { nome: 'Nome completo', nomeEsportivo: 'Nome esportivo', nacionalidade: 'País', nascimento: 'AAAA-MM-DD', clube: 'Clube atual', situacao: 'Empregado | Livre | Não informado', licenca: 'CBF Licença PRO', foto: 'https://link-da-foto.jpg', observacoes: '' },
+      identificacao: { nome: 'Nome completo', nomeEsportivo: 'Nome esportivo', nacionalidade: 'País', nascimento: 'AAAA-MM-DD', clube: 'Clube atual', situacao: 'Empregado | Livre | Não informado', licenca: 'CBF Licença PRO', foto: 'https://link-da-foto.jpg', observacoes: '', ultimaAtualizacao: '' },
       historico: [
         { clube: 'Clube', pais: 'País', funcao: 'Treinador principal', inicio: 'AAAA-MM', fim: '', competicoes: 'Série B, Copa do Brasil', jogos: 0, vitorias: 0, empates: 0, derrotas: 0, titulos: '' },
         { clube: 'Clube anterior', pais: 'País', funcao: 'Treinador principal', inicio: 'AAAA-MM', fim: 'AAAA-MM', competicoes: '', jogos: 0, vitorias: 0, empates: 0, derrotas: 0, titulos: '' },
@@ -3361,13 +3383,13 @@ $('#btnTrExport').onclick = async () => {
   const nl = n => n ? `${n} · ${ESCALA[n]}` : 'Não avaliado';
   const head = ['Nome esportivo','Nome completo','Nacionalidade','Data de nascimento','Idade','Clube atual','Situação contratual','Licença','Perfil predominante','Perfil secundário',
     ...PERFIS.map(p => `Nível ${p.l} (1–5)`), 'Justificativa do perfil','Sistema principal','Sistemas alternativos','Flexibilidade tática','Observações (sistemas)',
-    'Modelo: estrutura','Modelo: com a bola','Modelo: sem a bola','Modelo: bolas paradas', ...Object.values(DIMS).map(d => `Nota atual · ${d.l}`), 'Observações gerais','Foto','Atualizado em'];
+    'Modelo: estrutura','Modelo: com a bola','Modelo: sem a bola','Modelo: bolas paradas', ...Object.values(DIMS).map(d => `Nota atual · ${d.l}`), 'Observações gerais','Foto','Última atualização dos dados'];
   const aoa = [head].concat(rows.map(t => [nomeDe(t), t.nome||'', t.nacionalidade||'', fmtD(t.nascimento), idadeDe(t.nascimento) ?? '', t.clube||'', t.situacao||'', t.licenca||'',
     PK[t.perfilPredominante] ? PK[t.perfilPredominante].l : '', PK[t.perfilSecundario] ? PK[t.perfilSecundario].l : '', ...PERFIS.map(p => (t.perfis||{})[p.k] || ''),
     t.filosofia||'', t.sistemaPrincipal||'', (t.sistemasAlternativos||[]).join(', '), t.flexibilidade||'', t.sistemasObs||'',
     ...['estrutura','comBola','semBola','bolasParadas'].map(k => (t.modelo||{})[k] || ''),
     ...Object.keys(DIMS).map(d => { const e = lastEval(t.id, d); return e ? nl(e.nota) : 'Não avaliado'; }),
-    t.observacoes||'', t.fotoAsset ? base + '/_blob/' + t.fotoAsset : (t.foto||''), t.atualizadoEm ? new Date(t.atualizadoEm).toLocaleDateString('pt-BR') : '']));
+    t.observacoes||'', t.fotoAsset ? base + '/_blob/' + t.fotoAsset : (t.foto||''), ultAtual(t) ? fmtD(ultAtual(t)) : '']));
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet(aoa); ws['!autofilter'] = { ref: `A1:${XLSX.utils.encode_col(head.length - 1)}${aoa.length}` };
   ws['!cols'] = head.map((h, i) => ({ wch: i < 2 ? 26 : /Modelo|Justificativa|Observa/.test(h) ? 40 : 16 }));
