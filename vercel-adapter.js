@@ -354,7 +354,7 @@
       s.server = docs; s.loaded = true; setOnline(true); lastSync = new Date();
       kvSet('col:' + col, docs);
       notify(col); updateSync();
-      if (col === 'atletas') prefetchPhotos(docs);
+      if (col === 'atletas' || col === 'treinadores') prefetchPhotos(docs);
     } catch (e) {
       if (isNetErr(e)) { setOnline(false); await loadCached(col); }
       if (!s.loaded) notify(col);
@@ -362,10 +362,10 @@
   }
   // Baixa para o aparelho todas as fotos dos atletas (não só as que aparecem na tela),
   // para que estejam disponíveis quando não houver internet.
-  let prefetching = false;
-  async function prefetchPhotos(docs) {
-    if (prefetching || !('caches' in window)) return;
-    prefetching = true;
+  let prefetchChain = Promise.resolve();
+  const prefetchPhotos = docs => { prefetchChain = prefetchChain.then(() => doPrefetch(docs)); };
+  async function doPrefetch(docs) {
+    if (!('caches' in window)) return;
     try {
       const c = await caches.open(BLOB_CACHE);
       const ids = [...new Set(docs.flatMap(d => [d.data && d.data.fotoAsset, d.data && d.data.fotoOrig]).filter(Boolean))];
@@ -377,7 +377,7 @@
           try { const r = await fetch('/_blob/' + id, { credentials: 'same-origin' }); if (r.ok) await c.put('/_blob/' + id, r); } catch (e) { break; }
         }
       }));
-    } catch (e) {} finally { prefetching = false; }
+    } catch (e) {}
   }
   const refreshAll = () => Promise.all(Object.keys(subs).map(refresh));
   function subscribe(col, id, fn) {
