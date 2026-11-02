@@ -541,6 +541,18 @@ body:not([data-mod="tr"]) #trView,body:not([data-mod="tr"]) .tr-only{display:non
 .tcard .tsel{position:absolute;right:8px;bottom:8px;z-index:2;width:24px;height:24px;border-radius:50%;border:2px solid #fff;background:rgba(8,7,11,.6);display:grid;place-items:center;color:#fff;font-size:13px;font-weight:700}
 .tcard.sel .tsel{background:var(--accent);border-color:var(--accent)}
 .tcard .ph .nm{right:40px}
+.trabas{display:flex;gap:4px;border-bottom:1px solid var(--line-2);margin:4px 0 14px;overflow-x:auto}
+.trabas button{border:0;background:none;color:var(--ink-2);font:inherit;font-size:14px;font-weight:600;padding:10px 14px;border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;display:flex;gap:8px;align-items:center;white-space:nowrap}
+.trabas button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.trabas .n{font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--line-2);color:var(--ink-2)}
+.trabas button[aria-selected="true"] .n{background:var(--accent);color:#fff}
+.tlista{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:999px;border:1px solid var(--accent);color:var(--accent);background:transparent;cursor:pointer;white-space:nowrap}
+.tlista.add{background:var(--accent);color:#fff}
+.tlista.add:hover{filter:brightness(1.1)}
+.tlista.on{cursor:default;border-color:var(--line-2);color:var(--ink-2)}
+.tl-row{margin-top:10px}
+.tl-row .tlista{width:100%;justify-content:center;padding:7px 10px;font-size:12.5px;border-radius:8px}
+body.ro .tlista.add,body.ro #trListaBtn{display:none!important}
 .ptag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 10px 3px 8px;border-radius:999px;color:var(--c);border:1px solid color-mix(in srgb,var(--c) 55%,transparent);background:color-mix(in srgb,var(--c) 14%,transparent);white-space:nowrap}
 .ptag::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--c)}
 .ptag.sec{opacity:.75;font-weight:500}
@@ -806,6 +818,10 @@ body.ro #btnTrNew,body.ro #btnTrImport,body.ro #trEdit,body.ro #trDelZone,body.r
   </section>
 
   <section id="trView" aria-label="Treinadores">
+  <div class="trabas" role="tablist" aria-label="Lista e banco de treinadores">
+    <button type="button" role="tab" id="trAbaLista" data-aba="lista" aria-selected="true">Lista de treinadores <span class="n" id="trNLista"></span></button>
+    <button type="button" role="tab" id="trAbaBanco" data-aba="banco" aria-selected="false">Banco de treinadores <span class="n" id="trNBanco"></span></button>
+  </div>
   <div class="strip-cap" id="trStripCap">Treinadores por perfil predominante</div>
   <div class="strip" id="trStrip" aria-label="Treinadores por perfil"></div>
   <div class="toolbar">
@@ -1090,7 +1106,7 @@ body.ro #btnTrNew,body.ro #btnTrImport,body.ro #trEdit,body.ro #trDelZone,body.r
     </form>
     <div class="panel-foot">
       <div id="trDelZone"></div>
-      <div class="row"><button type="button" class="btn" id="trCancel">Fechar</button><button type="button" class="btn" id="trEdit">Editar</button><button type="button" class="btn primary" id="trSave">Salvar cadastro</button></div>
+      <div class="row"><button type="button" class="btn" id="trListaBtn" hidden></button><button type="button" class="btn" id="trCancel">Fechar</button><button type="button" class="btn" id="trEdit">Editar</button><button type="button" class="btn primary" id="trSave">Salvar cadastro</button></div>
     </div>
   </aside>
 </div>
@@ -2424,7 +2440,10 @@ const sbar = n => `<span class="sbar n${n||0}">${[1,2,3,4].map(i => `<i class="$
 let BA = null, db = null, assets = null, downloads = null, meName = '';
 let T = [], H = [], A = [];
 let loaded = false;
-const st = { q:'', nac:'', clube:'', perfil:'', sis:'', sort:'nome', view:'cards' };
+const st = { q:'', nac:'', clube:'', perfil:'', sis:'', sort:'nome', view:'cards', aba:'lista' };
+try { if (localStorage.getItem('ba_tr_aba') === 'banco') st.aba = 'banco'; } catch(e){}
+const naLista = t => t.naLista !== false;
+const base = () => st.aba === 'lista' ? T.filter(naLista) : T;
 try { const v = localStorage.getItem('ba_tr_view'); if (v === 'table') st.view = 'table'; } catch(e){}
 let mod = 'at'; try { if (localStorage.getItem('ba_mod') === 'tr') mod = 'tr'; } catch(e){}
 const cmp = { on:false, ids:[] };
@@ -2447,7 +2466,7 @@ $('#modNav').addEventListener('click', e => { const b = e.target.closest('button
 /* ---------- Lista ---------- */
 function filtered(){
   const q = norm(st.q);
-  const r = T.filter(t => (!q || norm(t.nome + ' ' + t.nomeEsportivo + ' ' + (t.clube||'')).includes(q))
+  const r = base().filter(t => (!q || norm(t.nome + ' ' + t.nomeEsportivo + ' ' + (t.clube||'')).includes(q))
     && (!st.nac || (t.nacionalidade||'') === st.nac)
     && (!st.clube || (st.clube === '__sem' ? !t.clube : (t.clube||'') === st.clube))
     && (!st.perfil || t.perfilPredominante === st.perfil)
@@ -2473,17 +2492,21 @@ function renderFilters(){
   $('#trDlClube').innerHTML = uniq(t => t.clube).map(v=>`<option value="${esc(v)}">`).join('');
 }
 function renderStrip(){
-  const n = T.length, c = {}; T.forEach(t => { if (t.perfilPredominante) c[t.perfilPredominante] = (c[t.perfilPredominante]||0) + 1; });
+  const B = base(), n = B.length, c = {}; B.forEach(t => { if (t.perfilPredominante) c[t.perfilPredominante] = (c[t.perfilPredominante]||0) + 1; });
   const card = (k, l, v, col) => { const pct = n ? Math.round(v/n*100) : 0; return `<button type="button" class="stat" data-p="${k}" style="--c:${col}" aria-pressed="${st.perfil===k}">
     <span class="info"><span class="top"><span class="n">${v}</span><span class="pct">${k ? pct+'%' : 'total'}</span></span><span class="l">${l}</span><span class="bar"><i style="width:${k?pct:100}%"></i></span></span></button>`; };
   $('#trStrip').innerHTML = card('', 'Todos', n, 'var(--accent)') + PERFIS.map(p => card(p.k, p.l, c[p.k]||0, p.c)).join('');
 }
 function renderList(){
   const r = filtered();
-  $('#trCount').textContent = `${r.length} de ${T.length}`;
+  const B = base();
+  $('#trCount').textContent = `${r.length} de ${B.length}`;
+  $$('.trabas button').forEach(b => b.setAttribute('aria-selected', b.dataset.aba === st.aba));
+  $('#trNLista').textContent = loaded ? T.filter(naLista).length : ''; $('#trNBanco').textContent = loaded ? T.length : '';
+  const lb = t => st.aba !== 'banco' ? '' : naLista(t) ? '<span class="tlista on">✓ Na lista</span>' : `<span class="tlista add" role="button" tabindex="0" data-add="${esc(t.id)}">+ Adicionar à lista</span>`;
   $('#trVCards').setAttribute('aria-pressed', st.view === 'cards'); $('#trVTable').setAttribute('aria-pressed', st.view === 'table');
   if (!loaded) return;
-  if (!r.length){ $('#trList').innerHTML = `<div class="empty">${T.length ? 'Nenhum treinador com esses filtros.' : 'Nenhum treinador cadastrado. Use “Cadastrar treinador” para incluir o primeiro.'}</div>`; return; }
+  if (!r.length){ $('#trList').innerHTML = `<div class="empty">${B.length ? 'Nenhum treinador com esses filtros.' : st.aba === 'lista' ? (T.length ? 'Nenhum treinador na lista. Abra o <b>Banco de treinadores</b> e use “Adicionar à lista”.' : 'Nenhum treinador cadastrado. Use “Cadastrar treinador” ou “Importar JSON”.') : 'Nenhum treinador no banco. Use “Cadastrar treinador” ou “Importar JSON”.'}</div>`; return; }
   if (st.view === 'cards'){
     $('#trList').innerHTML = `<div class="grid">${r.map(t => { const p = PK[t.perfilPredominante]; const id = idadeDe(t.nascimento); const sel = cmp.ids.includes(t.id); return `
       <button type="button" class="card tcard${sel?' sel':''}" data-tid="${esc(t.id)}" style="--c:${p ? p.c : 'var(--out)'}" aria-pressed="${cmp.on ? sel : 'false'}">
@@ -2492,22 +2515,22 @@ function renderList(){
         <div class="body">
           <div class="meta"><span><b>${esc(t.clube || 'Sem clube')}</b></span><span>${esc(t.nacionalidade || 'Nacionalidade —')}</span></div>
           <div class="meta"><span>${id != null ? `<b>${id}</b> anos` : 'Idade —'}</span><span>${esc(t.situacao || 'Não informado')}</span></div>
-          <div class="foot">${perfilTag(t.perfilPredominante)}${t.sistemaPrincipal ? `<span class="sys-chip">${esc(t.sistemaPrincipal)}</span>` : ''}</div>
+          <div class="foot">${perfilTag(t.perfilPredominante)}${t.sistemaPrincipal ? `<span class="sys-chip">${esc(t.sistemaPrincipal)}</span>` : ''}</div>${st.aba === 'banco' ? `<div class="tl-row">${lb(t)}</div>` : ''}
         </div>
       </button>`; }).join('')}</div>`;
   } else {
-    $('#trList').innerHTML = `<div class="tablewrap"><table><thead><tr><th>Treinador</th><th>Nacionalidade</th><th>Idade</th><th>Situação</th><th>Perfil</th><th>Sistema</th>${Object.keys(DIMS).map(d=>`<th>${esc(DIMS[d].l.split(' ')[0])}</th>`).join('')}</tr></thead><tbody>
+    $('#trList').innerHTML = `<div class="tablewrap"><table><thead><tr><th>Treinador</th><th>Nacionalidade</th><th>Idade</th><th>Situação</th><th>Perfil</th><th>Sistema</th>${Object.keys(DIMS).map(d=>`<th>${esc(DIMS[d].l.split(' ')[0])}</th>`).join('')}${st.aba === 'banco' ? '<th>Lista</th>' : ''}</tr></thead><tbody>
       ${r.map(t => { const sel = cmp.ids.includes(t.id); return `<tr data-tid="${esc(t.id)}" class="${sel?'sel':''}" style="--c:${PK[t.perfilPredominante] ? PK[t.perfilPredominante].c : 'var(--out)'}">
         <td><div class="who"><span class="thumb big">${photoHTML(t)}</span><div class="who-t"><span class="nm-t">${cmp.on ? (sel ? '☑ ' : '☐ ') : ''}${esc(nomeDe(t))}</span><span class="club-t">${esc(t.clube || 'Sem clube')}</span></div></div></td>
         <td>${esc(t.nacionalidade||'')}</td><td class="num">${idadeDe(t.nascimento) ?? ''}</td><td>${esc(t.situacao||'')}</td><td>${perfilTag(t.perfilPredominante)}</td><td>${t.sistemaPrincipal ? `<span class="sys-chip">${esc(t.sistemaPrincipal)}</span>` : ''}</td>
-        ${Object.keys(DIMS).map(d => { const e = lastEval(t.id, d); return `<td>${notaHTML(e && e.nota, true)}</td>`; }).join('')}</tr>`; }).join('')}
+        ${Object.keys(DIMS).map(d => { const e = lastEval(t.id, d); return `<td>${notaHTML(e && e.nota, true)}</td>`; }).join('')}${st.aba === 'banco' ? `<td>${lb(t)}</td>` : ''}</tr>`; }).join('')}
       </tbody></table></div>`;
   }
 }
 function renderTr(){
   if (mod !== 'tr') { updateNavCount(); return; }
   renderStrip(); renderFilters(); renderList(); updateNavCount();
-  $('#trSub').textContent = loaded ? `${T.length} treinadores · ${new Set(T.map(t=>t.clube).filter(Boolean)).size} clubes · ${H.length} experiências · ${A.length} avaliações` : 'Carregando a base…';
+  $('#trSub').textContent = loaded ? `${T.filter(naLista).length} na lista · ${T.length} no banco · ${new Set(T.map(t=>t.clube).filter(Boolean)).size} clubes · ${H.length} experiências · ${A.length} avaliações` : 'Carregando a base…';
 }
 function updateNavCount(){ const n = $('#modNavTr .n'); if (n) n.textContent = loaded ? T.length : ''; }
 
@@ -2516,7 +2539,17 @@ $('#trQ').addEventListener('input', e => { st.q = e.target.value; renderList(); 
 [['#trFNac','nac'],['#trFClube','clube'],['#trFPerfil','perfil'],['#trFSis','sis'],['#trSort','sort']].forEach(([id,k]) => $(id).addEventListener('change', e => { st[k] = e.target.value; renderStrip(); renderList(); }));
 const setView = v => { st.view = v; try{ localStorage.setItem('ba_tr_view', v); }catch(e){} renderList(); };
 $('#trVCards').onclick = () => setView('cards'); $('#trVTable').onclick = () => setView('table');
+async function setLista(t, on){
+  if (!db || !t) return false;
+  try{ await db.collection('treinadores').doc(t.id).update({ naLista: on }); t.naLista = on; toast(on ? `${nomeDe(t)} adicionado à lista` : `${nomeDe(t)} removido da lista (continua no banco)`); renderTr(); return true; }
+  catch(err){ toast(err && err.code === 'invalid_argument' ? 'Você não tem permissão para alterar a lista.' : 'Não foi possível atualizar a lista.'); return false; }
+}
+$$('.trabas button').forEach(b => b.onclick = () => { st.aba = b.dataset.aba; try{ localStorage.setItem('ba_tr_aba', st.aba); }catch(e){} if (cmp.on) setCompare(false); renderTr(); });
+$('#trList').addEventListener('keydown', e => { const a = e.target.closest('[data-add]'); if (a && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); e.stopPropagation(); setLista(T.find(x => x.id === a.dataset.add), true); } });
 $('#trList').addEventListener('click', e => {
+  const add = e.target.closest('[data-add]');
+  if (add){ e.preventDefault(); e.stopPropagation(); setLista(T.find(x => x.id === add.dataset.add), true); return; }
+  if (e.target.closest('.tlista.on')){ e.preventDefault(); }
   const el = e.target.closest('[data-tid]'); if (!el) return;
   const id = el.dataset.tid;
   if (cmp.on){ cmp.ids = cmp.ids.includes(id) ? cmp.ids.filter(x => x !== id) : cmp.ids.concat(id); renderList(); updateCmpBar(); return; }
@@ -2597,7 +2630,9 @@ function setEditMode(on){
 $('#trEdit').onclick = () => setEditMode(true);
 
 const ultAtual = t => t ? (t.ultimaAtualizacao || (t.atualizadoEm ? t.atualizadoEm.slice(0, 10) : '')) : '';
-function renderUpd(t){ const d = ultAtual(t); $('#trUpd').textContent = d ? `Última atualização dos dados: ${fmtD(d)}` : ''; }
+function renderUpd(t){ const d = ultAtual(t); $('#trUpd').textContent = d ? `Última atualização dos dados: ${fmtD(d)}` : ''; renderListaBtn(t); }
+function renderListaBtn(t){ const b = $('#trListaBtn'); b.hidden = !t; if (t){ b.textContent = naLista(t) ? 'Remover da lista' : 'Adicionar à lista'; b.classList.toggle('primary', !naLista(t)); } }
+$('#trListaBtn').onclick = async () => { if (!editing) return; if (await setLista(editing, !naLista(editing))) renderListaBtn(editing); };
 function openEditor(t, opts={}){
   editing = t || null; dupOK = false; $('#trDupZone').innerHTML = ''; $('#trErr').textContent = ''; $('#trPhState').textContent = '';
   $('#trEyebrow').textContent = t ? 'Ficha do treinador' : 'Novo treinador';
@@ -2775,7 +2810,7 @@ async function save(){
     filosofia: $('#trFilo').value.trim(),
     sistemaPrincipal: sisPrincipal(), sistemasAlternativos: sisAlt.filter(s => s !== sisPrincipal()), flexibilidade: $('#trFlex').value, sistemasObs: $('#trSisObs').value.trim(),
     modelo: { estrutura: $('#trMEst').value.trim(), comBola: $('#trMCom').value.trim(), semBola: $('#trMSem').value.trim(), bolasParadas: $('#trMBp').value.trim() },
-    ogolUrl: (editing && editing.ogolUrl) || '', ultimaAtualizacao: today(),
+    ogolUrl: (editing && editing.ogolUrl) || '', ultimaAtualizacao: today(), naLista: editing ? naLista(editing) : st.aba === 'lista',
     criadoEm: (editing && editing.criadoEm) || now, atualizadoEm: now,
   };
   const id = editing ? editing.id : slug(nomeEsp || nome) + '-' + Math.random().toString(36).slice(2, 6);
@@ -3327,7 +3362,7 @@ $('#jsGo').onclick = async () => {
             situacao: d.situacao || 'Não informado', licenca: d.licenca || '', observacoes: d.observacoes || '', foto: d.foto || '', fotoAsset: null, fotoOrig: null, fotoCrop: null,
             perfis: d.perfis || {}, perfilPredominante: d.perfilPredominante || '', perfilSecundario: d.perfilSecundario || '', filosofia: d.filosofia || '',
             sistemaPrincipal: d.sistemaPrincipal || '', sistemasAlternativos: d.sistemasAlternativos || [], flexibilidade: d.flexibilidade || '', sistemasObs: d.sistemasObs || '',
-            modelo: Object.assign({ estrutura:'', comBola:'', semBola:'', bolasParadas:'' }, d.modelo), ogolUrl: d.ogolUrl || '', ultimaAtualizacao: d.ultimaAtualizacao || '', criadoEm: t, atualizadoEm: t });
+            modelo: Object.assign({ estrutura:'', comBola:'', semBola:'', bolasParadas:'' }, d.modelo), ogolUrl: d.ogolUrl || '', ultimaAtualizacao: d.ultimaAtualizacao || '', naLista: false, criadoEm: t, atualizadoEm: t });
           nT++;
         }
         for (const h of r.hist){ await db.collection('historicoTreinadores').doc(uid('hx')).set({ ...h, treinadorId: id, criadoEm: now() }); nH++; }
@@ -3336,8 +3371,8 @@ $('#jsGo').onclick = async () => {
     }
     const msg = `${nT} novo(s), ${nU} atualizado(s), ${nH} experiência(s), ${nA} avaliação(ões)` + (falhas ? ` · ${falhas} com falha` : '');
     toast('Importação concluída: ' + msg);
-    $('#jsProg').textContent = 'Importação concluída: ' + msg + '.';
-    jsReset(); if (!falhas) setTimeout(() => { $('#trJsDlg').hidden = true; }, 1200);
+    $('#jsProg').textContent = 'Importação concluída: ' + msg + '.' + (nT ? ' Os novos treinadores estão no Banco de treinadores; use “Adicionar à lista” para incluí-los na lista.' : '');
+    jsReset(); if (!falhas && !nT) setTimeout(() => { $('#trJsDlg').hidden = true; }, 1200);
   }catch(e){
     $('#jsProg').innerHTML = `<span class="err">${e && e.code === 'invalid_argument' ? 'Você não tem permissão para cadastrar treinadores.' : 'Importação interrompida.'} Itens já gravados: ${nT} novo(s), ${nH} experiência(s), ${nA} avaliação(ões).</span>`;
   }finally{ btn.disabled = false; $('#trJsClose').disabled = false; }
