@@ -2449,7 +2449,7 @@ function renderList(){
   if (st.view === 'cards'){
     $('#trList').innerHTML = `<div class="grid">${r.map(t => { const p = PK[t.perfilPredominante]; const id = idadeDe(t.nascimento); const sel = cmp.ids.includes(t.id); return `
       <button type="button" class="card tcard${sel?' sel':''}" data-tid="${esc(t.id)}" style="--c:${p ? p.c : 'var(--out)'}" aria-pressed="${cmp.on ? sel : 'false'}">
-        <div class="ph">${photoHTML(t)}${p ? `<span class="chip pos" style="--c:${p.c}">${esc(p.l)}</span>` : ''}${t.sistemaPrincipal ? `<span class="cchip comp">${esc(t.sistemaPrincipal)}</span>` : ''}<div class="nm">${esc(nomeDe(t))}</div>${cmp.on ? '<span class="tsel">✓</span>' : ''}</div>
+        <div class="ph">${photoHTML(t)}<div class="nm">${esc(nomeDe(t))}</div>${cmp.on ? '<span class="tsel">✓</span>' : ''}</div>
         <div class="stripe"></div>
         <div class="body">
           <div class="meta"><span><b>${esc(t.clube || 'Sem clube')}</b></span><span>${esc(t.nacionalidade || 'Nacionalidade —')}</span></div>
