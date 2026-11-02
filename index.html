@@ -641,6 +641,11 @@ body.ro .tlista.add,body.ro #trListaBtn,body.ro #btnTrFotos{display:none!importa
 .hxt th{cursor:default}
 .hxt .num{text-align:right;font-variant-numeric:tabular-nums}
 .hxt tfoot td{font-weight:600;border-top:2px solid var(--line-2)}
+.hxt tr.hx-sub td{font-weight:600;background:var(--accent-soft);font-size:12px}
+.hxt tr.hx-cont td{border-top:0}
+.hxt tr.hx-first td{border-top:2px solid var(--line-2)}
+.hxt .cmp-n{font-weight:600}
+.hxres{min-width:520px;margin-top:6px}
 .hxt .src{font-family:var(--mono);font-size:10px;color:var(--ink-3)}
 .hx-act{white-space:nowrap}
 .hx-act .btn{padding:4px 9px;min-height:0;font-size:12px}
@@ -1146,7 +1151,7 @@ body.ro #btnTrNew,body.ro #btnTrImport,body.ro #trEdit,body.ro #trDelZone,body.r
       <div class="f s2"><label for="hxFuncao">Função exercida</label><input id="hxFuncao" list="trDlFuncao" autocomplete="off" value="Treinador principal"></div>
       <div class="f s2"><label for="hxIni">Início</label><input id="hxIni" type="month"></div>
       <div class="f s2"><label for="hxFim">Término</label><input id="hxFim" type="month"><span class="hint" style="margin:0">Vazio = trabalho atual</span></div>
-      <div class="f"><label for="hxComp">Competições disputadas</label><input id="hxComp" autocomplete="off" placeholder="Ex.: Série A, Copa do Brasil, Estadual"></div>
+      <div class="f"><label for="hxComp">Competição</label><input id="hxComp" list="dlComp" autocomplete="off" placeholder="Ex.: Série B (uma competição por registro)"><span class="hint" style="margin:0">Registre cada competição separadamente, com os jogos, vitórias, empates e derrotas dela. Use “+ Competição” no histórico para adicionar outra competição no mesmo trabalho.</span></div>
       <div class="f s2"><label for="hxJ">Jogos</label><input id="hxJ" type="number" min="0" inputmode="numeric"></div>
       <div class="f s2"><label for="hxV">Vitórias</label><input id="hxV" type="number" min="0" inputmode="numeric"></div>
       <div class="f s2"><label for="hxE">Empates</label><input id="hxE" type="number" min="0" inputmode="numeric"></div>
@@ -2906,25 +2911,47 @@ function renderHist(){
   const sum = k => list.reduce((s, h) => s + (Number(h[k]) || 0), 0);
   const J = sum('jogos'), V = sum('vitorias'), E = sum('empates'), D = sum('derrotas');
   const ap = aprovDe(J, V, E);
-  box.innerHTML = `<div class="tablewrap"><table class="hxt"><thead><tr><th>Período</th><th>Clube</th><th>Função</th><th>Competições</th><th class="num">J</th><th class="num">V</th><th class="num">E</th><th class="num">D</th><th class="num">Aprov.</th><th>Títulos</th><th></th></tr></thead><tbody>
-    ${list.map(h => `<tr><td style="white-space:nowrap">${h.inicio || h.fim ? `${fmtD(h.inicio)} – ${h.fim ? fmtD(h.fim) : '<b>atual</b>'}` : '<span class="evmeta">Período não informado</span>'}${h.fonte === 'ogol' ? '<div class="src">ogol.com.br</div>' : ''}</td>
-      <td><b>${esc(h.clube)}</b>${h.pais ? `<div class="evmeta">${esc(h.pais)}</div>` : ''}</td><td>${esc(h.funcao||'')}</td><td>${esc(h.competicoes||'')}</td>
+  // agrupa por trabalho (clube + função + período); cada registro = uma competição
+  const grupos = [];
+  list.forEach(h => { const k = [norm(h.clube), norm(h.funcao), h.inicio || '', h.fim || ''].join('|'); let g = grupos.find(x => x.k === k); if (!g){ g = { k, itens: [] }; grupos.push(g); } g.itens.push(h); });
+  const pct = a => a != null ? a.toLocaleString('pt-BR') + '%' : '';
+  const per = h => h.inicio || h.fim ? `${fmtD(h.inicio)} – ${h.fim ? fmtD(h.fim) : '<b>atual</b>'}` : '<span class="evmeta">Período não informado</span>';
+  const linhas = grupos.map(g => {
+    const it = g.itens.slice().sort((a, b) => (Number(b.jogos) || 0) - (Number(a.jogos) || 0) || (a.competicoes || '').localeCompare(b.competicoes || '', 'pt'));
+    const h0 = it[0];
+    const rows = it.map((h, n) => `<tr class="${n ? 'hx-cont' : 'hx-first'}"><td style="white-space:nowrap">${n ? '' : per(h0)}${!n && h0.fonte === 'ogol' ? '<div class="src">ogol.com.br</div>' : ''}</td>
+      <td>${n ? '' : `<b>${esc(h0.clube)}</b>${h0.pais ? `<div class="evmeta">${esc(h0.pais)}</div>` : ''}${h0.funcao ? `<div class="evmeta">${esc(h0.funcao)}</div>` : ''}`}</td>
+      <td class="cmp-n">${h.competicoes ? esc(h.competicoes) : '<span class="evmeta">Competição não informada</span>'}</td>
       <td class="num">${h.jogos ?? ''}</td><td class="num">${h.vitorias ?? ''}</td><td class="num">${h.empates ?? ''}</td><td class="num">${h.derrotas ?? ''}</td>
-      <td class="num">${h.aproveitamento != null ? h.aproveitamento.toLocaleString('pt-BR') + '%' : ''}</td><td>${esc(h.titulos||'')}</td>
-      <td class="hx-act"><button type="button" class="btn" data-hx-ed="${esc(h.id)}">Editar</button> <button type="button" class="btn danger" data-hx-del="${esc(h.id)}">Excluir</button></td></tr>`).join('')}
-    </tbody><tfoot><tr><td colspan="4">Total · ${list.length} experiência(s)</td><td class="num">${J || ''}</td><td class="num">${V || ''}</td><td class="num">${E || ''}</td><td class="num">${D || ''}</td><td class="num">${ap != null ? ap.toLocaleString('pt-BR') + '%' : ''}</td><td colspan="2"></td></tr></tfoot></table></div>`;
+      <td class="num">${pct(h.aproveitamento)}</td><td>${esc(h.titulos||'')}</td>
+      <td class="hx-act" style="white-space:nowrap">${n ? '' : `<button type="button" class="btn" data-hx-comp="${esc(h.id)}" title="Adicionar outra competição neste trabalho">+ Competição</button> `}<button type="button" class="btn" data-hx-ed="${esc(h.id)}">Editar</button> <button type="button" class="btn danger" data-hx-del="${esc(h.id)}">Excluir</button></td></tr>`).join('');
+    if (it.length < 2) return rows;
+    const sm = k => it.reduce((s, h) => s + (Number(h[k]) || 0), 0), j = sm('jogos'), v = sm('vitorias'), e = sm('empates'), d = sm('derrotas');
+    return rows + `<tr class="hx-sub hx-cont"><td></td><td></td><td>Subtotal ${esc(h0.clube)} · ${it.length} competições</td><td class="num">${j}</td><td class="num">${v}</td><td class="num">${e}</td><td class="num">${d}</td><td class="num">${pct(aprovDe(j, v, e))}</td><td></td><td></td></tr>`;
+  }).join('');
+  // resumo da carreira por competição
+  const porComp = {};
+  list.forEach(h => { const k = (h.competicoes || '').trim() || 'Competição não informada', n = norm(k); const c = porComp[n] || (porComp[n] = { nome: k, n: 0, j: 0, v: 0, e: 0, d: 0 }); c.n++; ['j','v','e','d'].forEach((x, i) => { c[x] += Number(h[['jogos','vitorias','empates','derrotas'][i]]) || 0; }); });
+  const comps = Object.values(porComp).sort((a, b) => b.j - a.j || a.nome.localeCompare(b.nome, 'pt'));
+  box.innerHTML = `<div class="tablewrap"><table class="hxt"><thead><tr><th>Período</th><th>Clube</th><th>Competição</th><th class="num">J</th><th class="num">V</th><th class="num">E</th><th class="num">D</th><th class="num">Aprov.</th><th>Títulos</th><th></th></tr></thead><tbody>
+    ${linhas}
+    </tbody><tfoot><tr><td colspan="3">Total · ${grupos.length} trabalho(s) · ${list.length} registro(s) por competição</td><td class="num">${J || ''}</td><td class="num">${V || ''}</td><td class="num">${E || ''}</td><td class="num">${D || ''}</td><td class="num">${pct(ap)}</td><td colspan="2"></td></tr></tfoot></table></div>
+    ${comps.length > 1 ? `<div class="section-t" style="margin-top:14px;font-size:10px">Resumo da carreira por competição</div><div class="tablewrap"><table class="hxt hxres"><thead><tr><th>Competição</th><th class="num">Registros</th><th class="num">J</th><th class="num">V</th><th class="num">E</th><th class="num">D</th><th class="num">Aprov.</th></tr></thead><tbody>
+      ${comps.map(c => `<tr><td class="cmp-n">${esc(c.nome)}</td><td class="num">${c.n}</td><td class="num">${c.j}</td><td class="num">${c.v}</td><td class="num">${c.e}</td><td class="num">${c.d}</td><td class="num">${pct(aprovDe(c.j, c.v, c.e))}</td></tr>`).join('')}
+    </tbody></table></div>` : ''}`;
 }
 let hxEditing = null;
 const num = id => { const v = $(id).value.trim(); return v === '' ? null : Number(v); };
 function renderAprov(){ const a = aprovDe(num('#hxJ'), num('#hxV'), num('#hxE')); $('#hxAprov').textContent = a != null ? a.toLocaleString('pt-BR') + '%' : '—'; }
 ['#hxJ','#hxV','#hxE','#hxD'].forEach(id => $(id).addEventListener('input', renderAprov));
-function openHx(h){
+function openHx(h, base){
   hxEditing = h || null; $('#hxErr').textContent = '';
-  $('#trHxTitle').textContent = h ? 'Editar experiência' : 'Nova experiência';
+  $('#trHxTitle').textContent = h ? 'Editar registro' : base ? `Nova competição · ${base.clube}` : 'Nova experiência';
   const s = (id, v) => { $(id).value = v ?? ''; };
-  s('#hxClube', h && h.clube); s('#hxPais', h ? h.pais : (editing && editing.nacionalidade) || ''); s('#hxFuncao', h ? h.funcao : 'Treinador principal');
-  s('#hxIni', h && h.inicio); s('#hxFim', h && h.fim); s('#hxComp', h && h.competicoes); s('#hxJ', h && h.jogos); s('#hxV', h && h.vitorias); s('#hxE', h && h.empates); s('#hxD', h && h.derrotas); s('#hxTit', h && h.titulos);
-  renderAprov(); $('#trHxDlg').hidden = false; setTimeout(() => $('#hxClube').focus(), 30);
+  const b = h || base;
+  s('#hxClube', b && b.clube); s('#hxPais', b ? b.pais : (editing && editing.nacionalidade) || ''); s('#hxFuncao', b ? b.funcao : 'Treinador principal');
+  s('#hxIni', b && b.inicio); s('#hxFim', b && b.fim); s('#hxComp', h && h.competicoes); s('#hxJ', h && h.jogos); s('#hxV', h && h.vitorias); s('#hxE', h && h.empates); s('#hxD', h && h.derrotas); s('#hxTit', h && h.titulos);
+  renderAprov(); $('#trHxDlg').hidden = false; setTimeout(() => $(base ? '#hxComp' : '#hxClube').focus(), 30);
 }
 function validaHx(h, ignoreId, list){
   if (!h.clube) return 'Informe o clube.';
@@ -2935,8 +2962,8 @@ function validaHx(h, ignoreId, list){
   const r = (h.vitorias||0) + (h.empates||0) + (h.derrotas||0);
   if (h.jogos != null && r > h.jogos) return `Vitórias + empates + derrotas (${r}) é maior que o número de jogos (${h.jogos}).`;
   if (h.jogos != null && h.vitorias != null && h.empates != null && h.derrotas != null && r !== h.jogos) return `Vitórias + empates + derrotas (${r}) deve ser igual ao número de jogos (${h.jogos}).`;
-  const dup = (list || histOf(h.treinadorId)).find(x => x.id !== ignoreId && norm(x.clube) === norm(h.clube) && x.inicio === h.inicio && norm(x.funcao) === norm(h.funcao));
-  if (dup) return 'Esta experiência (mesmo clube, função e início) já está registrada.';
+  const dup = (list || histOf(h.treinadorId)).find(x => x.id !== ignoreId && norm(x.clube) === norm(h.clube) && x.inicio === h.inicio && norm(x.funcao) === norm(h.funcao) && norm(x.competicoes) === norm(h.competicoes));
+  if (dup) return h.competicoes ? `A competição ${h.competicoes} já está registrada para este clube, função e início.` : 'Esta experiência (mesmo clube, função e início, sem competição) já está registrada.';
   return '';
 }
 $('#hxSave').onclick = async () => {
@@ -2953,8 +2980,9 @@ $('#hxSave').onclick = async () => {
 $('#trHxAdd').onclick = () => openHx(null);
 ['#trHxClose','#hxCancel'].forEach(id => $(id).onclick = () => { $('#trHxDlg').hidden = true; });
 $('#trHxList').addEventListener('click', async e => {
-  const ed = e.target.closest('[data-hx-ed]'), del = e.target.closest('[data-hx-del]');
+  const ed = e.target.closest('[data-hx-ed]'), del = e.target.closest('[data-hx-del]'), cp = e.target.closest('[data-hx-comp]');
   if (ed) openHx(H.find(h => h.id === ed.dataset.hxEd));
+  if (cp){ const b = H.find(h => h.id === cp.dataset.hxComp); if (b) openHx(null, b); }
   if (del){
     if (del.dataset.sure !== '1'){ del.dataset.sure = '1'; del.textContent = 'Confirmar'; return; }
     try{ await db.collection('historicoTreinadores').doc(del.dataset.hxDel).delete(); toast('Experiência excluída'); }catch(err){ toast('Não foi possível excluir.'); }
@@ -3255,7 +3283,18 @@ function jsTreinador(o, idx, vistos){
   r.dados = d;
   // histórico
   const hxBase = r.existente ? histOf(r.existente.id) : [];
-  const hxArr = src.historico == null ? [] : Array.isArray(src.historico) ? src.historico : [src.historico];
+  const hxArr0 = src.historico == null ? [] : Array.isArray(src.historico) ? src.historico : [src.historico];
+  // um item com "competicoes": [{ competicao, jogos, ... }] vira um registro por competição
+  const hxArr = hxArr0.flatMap(x => {
+    if (!x || typeof x !== 'object') return [x];
+    const kc = Object.keys(x).find(k => HX_ALIAS.competicoes.includes(kn(k)) && Array.isArray(x[k]) && x[k].some(c => c && typeof c === 'object'));
+    if (!kc) return [x];
+    const resto = Object.fromEntries(Object.entries(x).filter(([k]) => k !== kc && !['jogos','vitorias','empates','derrotas','j','v','e','d'].includes(kn(k))));
+    return x[kc].map(c => { if (!c || typeof c !== 'object') return { ...resto, competicoes: jsStr(c) };
+      const kn2 = Object.keys(c).find(k => ['competicao','nome','torneio','campeonato','competicoes','name'].includes(kn(k)));
+      const extra = Object.fromEntries(Object.entries(c).filter(([k]) => k !== kn2));
+      return { ...resto, ...extra, competicoes: kn2 ? jsStr(c[kn2]) : '' }; });
+  });
   hxArr.forEach((x, i) => {
     const lbl = `Histórico ${i + 1}`;
     if (!x || typeof x !== 'object'){ r.avisos.push(`${lbl}: registro inválido; ignorado.`); return; }
@@ -3426,13 +3465,14 @@ $('#jsGo').onclick = async () => {
 /* Modelo de arquivo para preenchimento */
 $('#jsModelo').onclick = async () => {
   const modelo = {
-    _instrucoes: 'Preencha a lista "treinadores" com dados reais e apague o registro de exemplo (que contém "_exemplo"). Campos vazios podem ser omitidos. Identificação: nascimento em AAAA-MM-DD ou DD/MM/AAAA; situação Empregado, Livre ou Não informado. Histórico: uma linha por trabalho; início/fim em AAAA-MM, MM/AAAA ou AAAA ("fim" vazio = trabalho atual), ou use "temporada" (ex.: 2024 ou 2023/2024). O aproveitamento é calculado automaticamente. "ultimaAtualizacao": data em que os dados do arquivo foram atualizados (AAAA-MM-DD); pode ser informada também dentro de cada treinador.',
+    _instrucoes: 'Preencha a lista "treinadores" com dados reais e apague o registro de exemplo (que contém "_exemplo"). Campos vazios podem ser omitidos. Identificação: nascimento em AAAA-MM-DD ou DD/MM/AAAA; situação Empregado, Livre ou Não informado. Histórico: uma linha por trabalho; início/fim em AAAA-MM, MM/AAAA ou AAAA ("fim" vazio = trabalho atual), ou use "temporada" (ex.: 2024 ou 2023/2024). Cada competição é um registro separado: use "competicoes" como lista, com os números de cada competição. O aproveitamento é calculado automaticamente. "ultimaAtualizacao": data em que os dados do arquivo foram atualizados (AAAA-MM-DD); pode ser informada também dentro de cada treinador.',
     ultimaAtualizacao: today(),
     treinadores: [{
       _exemplo: true,
       identificacao: { nome: 'Nome completo', nomeEsportivo: 'Nome esportivo', nacionalidade: 'País', nascimento: 'AAAA-MM-DD', clube: 'Clube atual', situacao: 'Empregado | Livre | Não informado', licenca: 'CBF Licença PRO', foto: 'https://link-da-foto.jpg', observacoes: '', ultimaAtualizacao: '' },
       historico: [
-        { clube: 'Clube', pais: 'País', funcao: 'Treinador principal', inicio: 'AAAA-MM', fim: '', competicoes: 'Série B, Copa do Brasil', jogos: 0, vitorias: 0, empates: 0, derrotas: 0, titulos: '' },
+        { clube: 'Clube', pais: 'País', funcao: 'Treinador principal', inicio: 'AAAA-MM', fim: '', titulos: '',
+          competicoes: [ { competicao: 'Série B', jogos: 0, vitorias: 0, empates: 0, derrotas: 0 }, { competicao: 'Copa do Brasil', jogos: 0, vitorias: 0, empates: 0, derrotas: 0 } ] },
         { clube: 'Clube anterior', pais: 'País', funcao: 'Treinador principal', inicio: 'AAAA-MM', fim: 'AAAA-MM', competicoes: '', jogos: 0, vitorias: 0, empates: 0, derrotas: 0, titulos: '' },
       ],
     }],
@@ -3557,7 +3597,7 @@ $('#btnTrExport').onclick = async () => {
   ws['!cols'] = head.map((h, i) => ({ wch: i < 2 ? 26 : /Modelo|Justificativa|Observa/.test(h) ? 40 : 16 }));
   XLSX.utils.book_append_sheet(wb, ws, 'Treinadores');
   const hx = H.filter(h => ids.has(h.treinadorId)).sort((a,b) => nomeDe(T.find(t=>t.id===a.treinadorId)||{}).localeCompare(nomeDe(T.find(t=>t.id===b.treinadorId)||{}),'pt') || (b.inicio||'').localeCompare(a.inicio||''));
-  const ws2 = XLSX.utils.aoa_to_sheet([['Treinador','Clube','País','Função','Início','Término','Competições','Jogos','Vitórias','Empates','Derrotas','Aproveitamento (%)','Títulos','Fonte']]
+  const ws2 = XLSX.utils.aoa_to_sheet([['Treinador','Clube','País','Função','Início','Término','Competição','Jogos','Vitórias','Empates','Derrotas','Aproveitamento (%)','Títulos','Fonte']]
     .concat(hx.map(h => [nomeDe(T.find(t => t.id === h.treinadorId) || {}), h.clube, h.pais||'', h.funcao||'', fmtD(h.inicio), h.fim ? fmtD(h.fim) : 'Atual', h.competicoes||'', h.jogos ?? '', h.vitorias ?? '', h.empates ?? '', h.derrotas ?? '', h.aproveitamento ?? '', h.titulos||'', h.fonte||'manual'])));
   ws2['!cols'] = [24,20,12,20,10,10,30,7,8,8,8,12,30,10].map(w => ({ wch:w }));
   XLSX.utils.book_append_sheet(wb, ws2, 'Histórico');
