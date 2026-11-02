@@ -64,6 +64,13 @@
   .ba-user .papel{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-2)}
   .ba-user button{border:0;background:var(--surface-2);color:var(--ink-2);border-radius:999px;padding:4px 10px;cursor:pointer;font-size:12px}
   .ba-user button:hover{color:var(--ink);background:var(--surface-3)}
+  .ba-sync{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line-2);background:transparent;color:var(--ink-2);border-radius:999px;padding:5px 12px;font:12px var(--body);cursor:pointer}
+  .ba-sync i{width:8px;height:8px;border-radius:50%;background:#3DDC97;flex:none}
+  .ba-sync[data-st=busy] i{background:#F5C451;animation:baPulse 1s ease-in-out infinite alternate}
+  .ba-sync[data-st=off]{border-color:rgba(255,122,133,.5);color:#FFD9DC}
+  .ba-sync[data-st=off] i{background:#FF7A85}
+  @keyframes baPulse{to{opacity:.35}}
+  #baInstallDlg ol{margin:0 0 10px;padding-left:20px} #baInstallDlg p{margin:8px 0 0}
   #baUsers table{min-width:0;width:100%}
   #baUsers td,#baUsers th{padding:8px 6px;font-size:13px}
   #baUsers th{position:static;cursor:default}
@@ -101,6 +108,7 @@
 
   async function afterLogin(user) {
     const wasLogged = !!ME; ME = user; $('#baLogin').hidden = true;
+    await kvSet('me', user); setOnline(true); flush();
     if ($('#baSenha')) $('#baSenha').value = '';
     if (wasLogged) location.reload(); else { loginResolve(); mountUserBar(); }
   }
@@ -172,9 +180,15 @@
   async function boot() {
     try { const c = await fetch('/api/auth?acao=config', { credentials: 'same-origin' }); if (c.ok) GOOGLE_ID = (await c.json()).googleClientId || ''; } catch (e) {}
     try {
-      const r = await fetch('/api/auth', { credentials: 'same-origin' });
-      if (r.ok) { ME = (await r.json()).user; loginResolve(); mountUserBar(); return; }
-    } catch (e) {}
+      const r = await fetch('/api/auth', { credentials: 'same-origin', cache: 'no-store' });
+      if (r.ok) { ME = (await r.json()).user; kvSet('me', ME); loginResolve(); mountUserBar(); flush(); return; }
+    } catch (e) {
+      // Sem internet: entra com o último usuário que usou este aparelho e trabalha com a cópia local.
+      const cached = await kvGet('me');
+      if (cached && cached.email) { ME = cached; setOnline(false); loginResolve(); mountUserBar(); return; }
+      showLogin('Sem conexão com a internet. No primeiro acesso deste aparelho é preciso estar on-line.');
+      return;
+    }
     showLogin();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
@@ -184,11 +198,24 @@
     if (!bar || $('#baUserBar')) return;
     const papel = { admin: 'Administrador', editor: 'Editor', leitor: 'Leitura' }[ME.papel] || ME.papel;
     const el = document.createElement('div'); el.id = 'baUserBar'; el.className = 'ba-user';
+    const sync = document.createElement('button'); sync.type = 'button'; sync.id = 'baSync'; sync.className = 'ba-sync'; sync.innerHTML = '<i></i><span class="t"></span>';
+    sync.onclick = syncNow; bar.prepend(sync);
     el.innerHTML = `<span><b>${esc(ME.nome || ME.email)}</b> · <span class="papel">${esc(papel)}</span></span>` +
+      (isStandalone() ? '' : `<button type="button" id="baInstall">Instalar app</button>`) +
       (ME.papel === 'admin' ? `<button type="button" id="baUsersBtn">Usuários</button>` : `<button type="button" id="baPassBtn">Senha</button>`) +
       `<button type="button" id="baOut">Sair</button>`;
     bar.prepend(el);
-    $('#baOut').onclick = async () => { try { await fetch('/api/auth?acao=logout', { method: 'POST', credentials: 'same-origin' }); } catch (e) {} location.reload(); };
+    $('#baOut').onclick = async () => {
+      const b = $('#baOut');
+      if (pending.length && b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = `Sair? ${pending.length} pendente(s)`; banner('Há alterações feitas sem internet que ainda não foram enviadas. Conecte-se e aguarde "Sincronizado" antes de sair, ou toque em Sair de novo para descartá-las.'); return; }
+      try { await fetch('/api/auth?acao=logout', { method: 'POST', credentials: 'same-origin' }); } catch (e) {}
+      await kvDel('me'); for (const c of ['atletas', 'shortlists', 'shortlistsSalvas']) await kvDel('col:' + c);
+      await idbDo('outbox', 'readwrite', st => st.clear());
+      try { await caches.delete(BLOB_CACHE); } catch (e) {}
+      location.reload();
+    };
+    if ($('#baInstall')) $('#baInstall').onclick = openInstall;
+    updateSync();
     if ($('#baUsersBtn')) $('#baUsersBtn').onclick = openUsers;
     if ($('#baPassBtn')) $('#baPassBtn').onclick = openPass;
   }
@@ -256,38 +283,144 @@
     };
   }
 
+  /* ---------- Modo offline: cópia local (IndexedDB) + fila de alterações ----------
+     Tudo que é lido do servidor fica guardado no aparelho. Alterações feitas sem
+     internet entram numa fila e são enviadas, na ordem, quando a conexão volta. */
+  const IDB_NAME = 'ba-offline', BLOB_CACHE = 'ba-blobs';
+  let _idb = null;
+  function idb() {
+    if (_idb) return _idb;
+    _idb = new Promise((res, rej) => {
+      const rq = indexedDB.open(IDB_NAME, 1);
+      rq.onupgradeneeded = () => { const d = rq.result; d.createObjectStore('kv'); d.createObjectStore('outbox', { keyPath: 'k', autoIncrement: true }); };
+      rq.onsuccess = () => res(rq.result); rq.onerror = () => rej(rq.error);
+    });
+    return _idb;
+  }
+  async function idbDo(store, mode, fn) {
+    try {
+      const d = await idb();
+      return await new Promise((res, rej) => { const tx = d.transaction(store, mode); const r = fn(tx.objectStore(store)); tx.oncomplete = () => res(r && r.result); tx.onerror = () => rej(tx.error); tx.onabort = () => rej(tx.error); });
+    } catch (e) { return undefined; }
+  }
+  const kvGet = k => idbDo('kv', 'readonly', s => s.get(k));
+  const kvSet = (k, v) => idbDo('kv', 'readwrite', s => s.put(v, k));
+  const kvDel = k => idbDo('kv', 'readwrite', s => s.delete(k));
+  const isNetErr = e => !e || e.name === 'TypeError' || e.offline;
+
+  let pending = [];            // fila em memória (espelho do IndexedDB)
+  let online = navigator.onLine !== false;
+  let lastSync = null, syncing = false;
+  const pendingReady = idbDo('outbox', 'readonly', s => s.getAll()).then(v => { pending = (v || []).sort((a, b) => a.k - b.k); updateSync(); });
+
   /* ---------- db (mesma interface usada pela página) ---------- */
-  const subs = {}; // col -> { docs, listeners:Set }
-  const POLL = 30000;
+  const subs = {}; // col -> { server, loaded, listeners:Set, timer }
+  const POLL = 20000;
+  const sub = col => subs[col] || (subs[col] = { server: [], loaded: false, listeners: new Set(), timer: null });
+  function effective(col) {
+    const m = new Map(sub(col).server.map(d => [d.id, d.data]));
+    for (const op of pending) {
+      if (op.col !== col) continue;
+      if (op.op === 'put') m.set(op.id, op.data);
+      else if (op.op === 'patch') { const cur = { ...(m.get(op.id) || {}) }; for (const [k, v] of Object.entries(op.data)) { if (v && typeof v === 'object' && v.__delete__ === true) delete cur[k]; else cur[k] = v; } m.set(op.id, cur); }
+      else if (op.op === 'del') m.delete(op.id);
+    }
+    return [...m].map(([id, data]) => ({ id, data }));
+  }
+  const hasPending = (col, id) => pending.some(o => o.col === col && (id == null || o.id === id));
   function snapDoc(col, id) {
-    const d = (subs[col] && subs[col].docs || []).find(x => x.id === id);
-    return { id, exists: !!d, data: () => (d ? d.data : undefined), metadata: { fromCache: false, hasPendingWrites: false } };
+    const d = effective(col).find(x => x.id === id);
+    return { id, exists: !!d, data: () => (d ? d.data : undefined), metadata: { fromCache: !online, hasPendingWrites: hasPending(col, id) } };
   }
   function snapCol(col) {
-    const docs = (subs[col].docs || []).map(d => ({ id: d.id, exists: true, data: () => d.data, metadata: {} }));
-    return { docs, size: docs.length, empty: !docs.length, docChanges: () => [], metadata: { fromCache: false, hasPendingWrites: false } };
+    const docs = effective(col).map(d => ({ id: d.id, exists: true, data: () => d.data, metadata: {} }));
+    return { docs, size: docs.length, empty: !docs.length, docChanges: () => [], metadata: { fromCache: !online, hasPendingWrites: hasPending(col) } };
+  }
+  function notify(col) {
+    sub(col).listeners.forEach(l => { try { l.id ? l.fn(snapDoc(col, l.id)) : l.fn(snapCol(col)); } catch (e) { console.error(e); } });
+  }
+  async function loadCached(col) {
+    const s = sub(col); if (s.loaded) return;
+    const cached = await kvGet('col:' + col);
+    if (!s.loaded && Array.isArray(cached)) { s.server = cached; s.loaded = true; notify(col); }
   }
   async function refresh(col) {
-    const s = subs[col] || (subs[col] = { docs: [], listeners: new Set(), timer: null });
-    const { docs } = await api('GET', '/api/data?col=' + encodeURIComponent(col));
-    s.docs = docs;
-    s.listeners.forEach(l => { try { l.id ? l.fn(snapDoc(col, l.id)) : l.fn(snapCol(col)); } catch (e) { console.error(e); } });
+    const s = sub(col);
+    try {
+      const r = await fetch('/api/data?col=' + encodeURIComponent(col), { credentials: 'same-origin', cache: 'no-store' });
+      if (r.status === 401) { showLogin('Sua sessão expirou. Entre novamente.'); throw { status: 401 }; }
+      if (!r.ok) throw { status: r.status };
+      const { docs } = await r.json();
+      s.server = docs; s.loaded = true; setOnline(true); lastSync = new Date();
+      kvSet('col:' + col, docs);
+      notify(col); updateSync();
+    } catch (e) {
+      if (isNetErr(e)) { setOnline(false); await loadCached(col); }
+      if (!s.loaded) notify(col);
+    }
   }
-  function subscribe(col, id, fn, onErr) {
-    const s = subs[col] || (subs[col] = { docs: [], listeners: new Set(), timer: null });
+  const refreshAll = () => Promise.all(Object.keys(subs).map(refresh));
+  function subscribe(col, id, fn) {
+    const s = sub(col);
     const l = { id, fn }; s.listeners.add(l);
-    refresh(col).catch(e => onErr && onErr(e));
-    if (!s.timer) s.timer = setInterval(() => { if (!document.hidden) refresh(col).catch(() => {}); }, POLL);
+    pendingReady.then(() => (s.loaded ? fn(id ? snapDoc(col, id) : snapCol(col)) : loadCached(col))).then(() => refresh(col));
+    if (!s.timer) s.timer = setInterval(() => { if (!document.hidden && online) { flush(); refresh(col); } }, POLL);
     return () => { s.listeners.delete(l); };
   }
-  window.addEventListener('focus', () => Object.keys(subs).forEach(c => refresh(c).catch(() => {})));
+
+  async function enqueue(op) {
+    op.ts = Date.now();
+    const k = await idbDo('outbox', 'readwrite', s => s.add(op));
+    op.k = k != null ? k : Date.now() + Math.random();
+    pending.push(op);
+    if (op.col) notify(op.col);
+    updateSync();
+    flush();
+  }
+  async function sendOp(op) {
+    const q = op.col ? `/api/data?col=${encodeURIComponent(op.col)}&id=${encodeURIComponent(op.id)}` : '';
+    let r;
+    if (op.op === 'put' || op.op === 'patch') r = await fetch(q, { method: op.op === 'put' ? 'PUT' : 'PATCH', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(op.data) });
+    else if (op.op === 'del') r = await fetch(q, { method: 'DELETE', credentials: 'same-origin' });
+    else if (op.op === 'upload') r = await fetch('/api/upload', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/octet-stream', 'x-type': op.type, 'x-id': op.id }, body: op.blob });
+    else if (op.op === 'assetDel') r = await fetch('/api/upload?id=' + encodeURIComponent(op.id), { method: 'DELETE', credentials: 'same-origin' });
+    else return;
+    if (r.ok) return;
+    let j = {}; try { j = await r.json(); } catch (e) {}
+    const err = { status: r.status, message: j.error || 'Falha ao sincronizar.' };
+    if (r.status >= 500 || r.status === 429) err.offline = true; // tenta de novo depois
+    throw err;
+  }
+  async function flush() {
+    await pendingReady;
+    if (syncing || !pending.length) return updateSync();
+    syncing = true; updateSync();
+    const cols = new Set(); let ok = 0;
+    try {
+      while (pending.length) {
+        const op = pending[0];
+        try { await sendOp(op); ok++; }
+        catch (e) {
+          if (e.status === 401) { showLogin('Entre novamente para enviar as alterações feitas sem internet.'); break; }
+          if (isNetErr(e)) { if (!e.status) setOnline(false); break; }
+          banner('Uma alteração não pôde ser salva no servidor: ' + e.message);
+        }
+        await idbDo('outbox', 'readwrite', s => s.delete(op.k));
+        pending.shift(); if (op.col) cols.add(op.col);
+      }
+      if (ok) setOnline(true);
+    } finally { syncing = false; }
+    updateSync();
+    if (cols.size) Object.keys(subs).forEach(c => refresh(c));
+  }
+
   function docRef(col, id) {
     return {
       id, path: col + '/' + id,
-      get: async () => { await refresh(col); return snapDoc(col, id); },
-      set: async data => { await api('PUT', `/api/data?col=${encodeURIComponent(col)}&id=${encodeURIComponent(id)}`, data); refresh(col).catch(() => {}); },
-      update: async data => { await api('PATCH', `/api/data?col=${encodeURIComponent(col)}&id=${encodeURIComponent(id)}`, data); refresh(col).catch(() => {}); },
-      delete: async () => { await api('DELETE', `/api/data?col=${encodeURIComponent(col)}&id=${encodeURIComponent(id)}`); refresh(col).catch(() => {}); },
+      get: async () => { await pendingReady; await loadCached(col); await refresh(col); return snapDoc(col, id); },
+      set: async data => enqueue({ op: 'put', col, id, data: JSON.parse(JSON.stringify(data)) }),
+      update: async data => enqueue({ op: 'patch', col, id, data: JSON.parse(JSON.stringify(data)) }),
+      delete: async () => enqueue({ op: 'del', col, id }),
       onSnapshot: (fn, err) => subscribe(col, id, fn, err),
     };
   }
@@ -296,18 +429,51 @@
       path: col,
       doc: id => docRef(col, id || (Date.now().toString(36) + Math.random().toString(36).slice(2, 8))),
       add: async data => { const r = docRef(col, Date.now().toString(36) + Math.random().toString(36).slice(2, 8)); await r.set(data); return r; },
-      get: async () => { await refresh(col); return snapCol(col); },
+      get: async () => { await pendingReady; await loadCached(col); await refresh(col); return snapCol(col); },
       onSnapshot: (fn, err) => subscribe(col, null, fn, err),
       where() { return this; }, orderBy() { return this; }, limit() { return this; },
     };
   }
   const db = { collection: colRef, doc: path => { const [c, i] = String(path).split('/'); return docRef(c, i); } };
 
+  const newId = () => [...crypto.getRandomValues(new Uint8Array(16))].map(b => b.toString(16).padStart(2, '0')).join('');
   const assets = {
-    upload: async (blob, opts = {}) => api('POST', '/api/upload', blob, { 'x-type': opts.type || blob.type || 'image/jpeg' }),
-    delete: async id => api('DELETE', '/api/upload?id=' + encodeURIComponent(String(id).replace(/^\/_blob\//, ''))),
+    // A foto ganha o identificador aqui mesmo: aparece na hora (cópia local) e sobe quando houver internet.
+    upload: async (blob, opts = {}) => {
+      const type = opts.type || blob.type || 'image/jpeg';
+      if (!/^image\/(jpeg|png|webp|gif)$/.test(type)) throw { code: 'unsupported_type', message: 'Formato não aceito. Use JPG, PNG, WEBP ou GIF.' };
+      if (blob.size > 4_000_000) throw { code: 'too_large', message: 'Arquivo grande demais (máx. 4 MB).' };
+      const id = newId();
+      try { const c = await caches.open(BLOB_CACHE); await c.put('/_blob/' + id, new Response(blob, { headers: { 'Content-Type': type } })); } catch (e) {}
+      await enqueue({ op: 'upload', id, type, blob });
+      return { id, url: '/_blob/' + id, sizeBytes: blob.size, contentType: type };
+    },
+    delete: async id => {
+      id = String(id).replace(/^\/_blob\//, '');
+      try { const c = await caches.open(BLOB_CACHE); await c.delete('/_blob/' + id); } catch (e) {}
+      await enqueue({ op: 'assetDel', id });
+      return { deleted: true };
+    },
     list: async () => ({ assets: [], usage: {} }),
   };
+
+  /* ---------- Indicador de sincronização ---------- */
+  function setOnline(v) { if (online !== v) { online = v; updateSync(); } }
+  function updateSync() {
+    const el = document.getElementById('baSync'); if (!el) return;
+    const n = pending.length;
+    let st, txt;
+    if (!online) { st = 'off'; txt = n ? `Offline · ${n} ${n === 1 ? 'alteração pendente' : 'alterações pendentes'}` : 'Offline · usando cópia local'; }
+    else if (syncing || n) { st = 'busy'; txt = `Sincronizando${n ? ' ' + n : ''}…`; }
+    else { st = 'ok'; txt = 'Sincronizado'; }
+    el.dataset.st = st; el.querySelector('.t').textContent = txt;
+    el.title = (lastSync ? 'Última sincronização: ' + lastSync.toLocaleString('pt-BR') + '. ' : '') + 'Toque para sincronizar agora.';
+  }
+  async function syncNow() { setOnline(navigator.onLine !== false); await flush(); await refreshAll(); updateSync(); }
+  window.addEventListener('online', () => { setOnline(true); syncNow(); });
+  window.addEventListener('offline', () => setOnline(false));
+  window.addEventListener('focus', () => { if (ME) syncNow(); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && ME) syncNow(); });
 
   const downloads = {
     save: async ({ filename, data }) => {
@@ -326,6 +492,26 @@
     me: async () => ({ id: ME ? ME.email : null, name: ME ? (ME.nome || '') : '', email: ME ? ME.email : null }),
     id: async () => (ME ? ME.email : null),
   };
+
+  /* ---------- Instalar como app (Mac, iPad, tablets) ---------- */
+  let installEvt = null;
+  const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; });
+  window.addEventListener('appinstalled', () => { const b = $('#baInstall'); if (b) b.remove(); });
+  async function openInstall() {
+    if (installEvt) { installEvt.prompt(); try { await installEvt.userChoice; } catch (e) {} installEvt = null; return; }
+    const ua = navigator.userAgent, ipad = /iPad|iPhone/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    const safariMac = !ipad && /Macintosh/.test(ua) && /Safari/.test(ua) && !/Chrome|Chromium|Edg/.test(ua);
+    const passo = ipad
+      ? '<ol><li>Abra este endereço no <b>Safari</b>.</li><li>Toque em <b>Compartilhar</b> (quadrado com seta para cima).</li><li>Escolha <b>Adicionar à Tela de Início</b> e toque em <b>Adicionar</b>.</li></ol>'
+      : safariMac
+      ? '<ol><li>No Safari, abra o menu <b>Arquivo</b>.</li><li>Clique em <b>Adicionar ao Dock…</b> e depois em <b>Adicionar</b>.</li></ol><p>No Chrome, use o ícone de instalar na barra de endereço.</p>'
+      : '<ol><li>No <b>Chrome</b> ou <b>Edge</b>, clique no ícone de instalar na barra de endereço (computador com seta).</li><li>Ou abra o menu <b>⋮</b> e escolha <b>Instalar app</b> / <b>Adicionar à tela inicial</b>.</li></ol><p>No iPad use o Safari; no Mac, o Safari (Arquivo → Adicionar ao Dock) ou o Chrome.</p>';
+    modal('baInstallDlg', 'Instalar o app', `<div class="hint" style="margin:0;font-size:14px;line-height:1.6">${passo}
+      <p>Depois de instalado, o Banco de Atletas abre em janela própria, com ícone, e funciona <b>sem internet</b>: o que você cadastrar fica guardado no aparelho e é enviado ao site sozinho quando a conexão voltar.</p>
+      <p>No primeiro acesso pelo app instalado, entre com a sua conta uma vez com internet.</p></div>`);
+  }
+  if ('serviceWorker' in navigator) window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(() => {}); });
 
   window.claude = {
     use: async name => {
