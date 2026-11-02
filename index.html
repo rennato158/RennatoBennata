@@ -2442,7 +2442,7 @@ let T = [], H = [], A = [];
 let loaded = false;
 const st = { q:'', nac:'', clube:'', perfil:'', sis:'', sort:'nome', view:'cards', aba:'lista' };
 try { if (localStorage.getItem('ba_tr_aba') === 'banco') st.aba = 'banco'; } catch(e){}
-const naLista = t => t.naLista !== false;
+const naLista = t => t.naLista === true;
 const base = () => st.aba === 'lista' ? T.filter(naLista) : T;
 try { const v = localStorage.getItem('ba_tr_view'); if (v === 'table') st.view = 'table'; } catch(e){}
 let mod = 'at'; try { if (localStorage.getItem('ba_mod') === 'tr') mod = 'tr'; } catch(e){}
