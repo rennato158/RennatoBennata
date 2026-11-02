@@ -1,3 +1,83 @@
+<script>
+/* Tela inicial: barra de 0 a 100% em 4 segundos e depois abre o sistema */
+(function(){
+  if (window.__baSplash) return; window.__baSplash = true;
+  var DUR = 4000;
+  var css = '#baSplash{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:24px 16px;background:#08070B;color:#F3F0FA;font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;transition:opacity .45s ease,visibility .45s ease}'
+  + '#baSplash.out{opacity:0;visibility:hidden}'
+  + '#baSplash .sp-in{width:100%;max-width:520px;display:flex;flex-direction:column;align-items:center;text-align:center}'
+  + '#baSplash .sp-field{width:min(340px,82vw);height:auto;margin-bottom:28px}'
+  + '#baSplash .sp-lens{transform-origin:262px 118px;animation:spScan 2.4s ease-in-out infinite alternate}'
+  + '@keyframes spScan{from{transform:translate(-26px,8px)}to{transform:translate(10px,-6px)}}'
+  + '#baSplash .sp-eye{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#B794FF;margin:0 0 10px}'
+  + '#baSplash .sp-title{font-family:"Barlow Condensed","Arial Narrow",Arial,sans-serif;font-weight:700;text-transform:uppercase;font-size:clamp(34px,8vw,54px);line-height:.95;letter-spacing:.01em;margin:0;text-wrap:balance}'
+  + '#baSplash .sp-title span{color:#B794FF}'
+  + '#baSplash .sp-sub{margin:12px 0 0;font-size:14px;color:#B9B2CC}'
+  + '#baSplash .sp-sub b{color:#F3F0FA;font-weight:600}'
+  + '#baSplash .sp-bar{width:100%;max-width:360px;margin-top:34px}'
+  + '#baSplash .sp-track{height:6px;border-radius:99px;background:#1A1721;border:1px solid #2A2533;overflow:hidden}'
+  + '#baSplash .sp-fill{height:100%;width:0;border-radius:99px;background:#8B5CF6;box-shadow:0 0 14px rgba(139,92,246,.6)}'
+  + '#baSplash .sp-meta{display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:#7D7690}'
+  + '#baSplash .sp-pct{font-variant-numeric:tabular-nums;color:#F3F0FA;font-weight:500}'
+  + '#baSplash .sp-foot{position:absolute;bottom:max(18px,env(safe-area-inset-bottom));left:0;right:0;text-align:center;font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#4E485C}'
+  + '@media (prefers-reduced-motion:reduce){#baSplash .sp-lens{animation:none}}';
+  var st = document.createElement('style'); st.id = 'baSplashCss'; st.textContent = css;
+  (document.head || document.documentElement).appendChild(st);
+
+  var el = document.createElement('div');
+  el.id = 'baSplash'; el.setAttribute('role', 'progressbar'); el.setAttribute('aria-label', 'Carregando o sistema');
+  el.setAttribute('aria-valuemin', '0'); el.setAttribute('aria-valuemax', '100'); el.setAttribute('aria-valuenow', '0');
+  el.innerHTML =
+    '<div class="sp-in">'
+    + '<svg class="sp-field" viewBox="0 0 400 270" fill="none" aria-hidden="true">'
+    +   '<defs><clipPath id="spLensClip"><circle cx="262" cy="118" r="58"/></clipPath>'
+    +   '<radialGradient id="spGlow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#B794FF" stop-opacity=".55"/><stop offset="1" stop-color="#B794FF" stop-opacity="0"/></radialGradient></defs>'
+    +   '<g stroke="#8B5CF6" stroke-width="1.4" opacity=".75"><rect x="6" y="6" width="388" height="244" rx="3"/><line x1="200" y1="6" x2="200" y2="250"/><circle cx="200" cy="128" r="36"/>'
+    +   '<rect x="6" y="66" width="60" height="124"/><rect x="6" y="98" width="22" height="60"/><rect x="334" y="66" width="60" height="124"/><rect x="372" y="98" width="22" height="60"/>'
+    +   '<path d="M66 104a30 30 0 0 1 0 48M334 104a30 30 0 0 0 0 48"/></g>'
+    +   '<circle cx="200" cy="128" r="2.5" fill="#8B5CF6"/>'
+    +   '<g fill="#8B5CF6" opacity=".55"><circle cx="40" cy="128" r="4"/><circle cx="96" cy="70" r="4"/><circle cx="92" cy="186" r="4"/><circle cx="150" cy="128" r="4"/><circle cx="170" cy="62" r="4"/><circle cx="168" cy="196" r="4"/><circle cx="236" cy="200" r="4"/><circle cx="330" cy="44" r="4"/><circle cx="318" cy="210" r="4"/></g>'
+    +   '<g class="sp-lens">'
+    +     '<g clip-path="url(#spLensClip)"><rect x="200" y="56" width="124" height="124" fill="#0B0912"/>'
+    +       '<g transform="translate(262 118) scale(1.9) translate(-262 -118)" stroke="#B794FF" stroke-width="1" opacity=".9"><line x1="200" y1="6" x2="200" y2="250"/><circle cx="200" cy="128" r="36"/><rect x="334" y="66" width="60" height="124"/></g>'
+    +       '<circle cx="268" cy="112" r="24" fill="url(#spGlow)"/><circle cx="268" cy="112" r="7" fill="#B794FF"/>'
+    +       '<circle cx="268" cy="112" r="14" stroke="#B794FF" stroke-width="1.5" stroke-dasharray="3 4"/></g>'
+    +     '<circle cx="262" cy="118" r="58" stroke="#B794FF" stroke-width="7"/><circle cx="262" cy="118" r="52" stroke="#8B5CF6" stroke-width="1.2" opacity=".6"/>'
+    +     '<path d="M304 160 346 202" stroke="#B794FF" stroke-width="14" stroke-linecap="round"/>'
+    +   '</g>'
+    + '</svg>'
+    + '<p class="sp-eye">Sistema de monitoramento</p>'
+    + '<h1 class="sp-title">Banco de Dados <span>de Atletas</span></h1>'
+    + '<p class="sp-sub">Observação Técnica: <b>Anderson Batatais</b></p>'
+    + '<div class="sp-bar"><div class="sp-track"><div class="sp-fill"></div></div>'
+    + '<div class="sp-meta"><span class="sp-step">Iniciando…</span><span class="sp-pct">0%</span></div></div>'
+    + '</div>'
+    + '<div class="sp-foot">Acesso restrito a usuários cadastrados</div>';
+  document.documentElement.appendChild(el);
+  var prevOverflow = document.documentElement.style.overflow;
+  document.documentElement.style.overflow = 'hidden';
+
+  var fill = el.querySelector('.sp-fill'), pct = el.querySelector('.sp-pct'), step = el.querySelector('.sp-step');
+  var STEPS = [[0,'Iniciando…'],[20,'Conectando ao banco de dados…'],[50,'Carregando atletas…'],[75,'Preparando fotos e shortlist…'],[100,'Pronto']];
+  var t0 = null, last = -1;
+  function frame(ts){
+    if (t0 === null) t0 = ts;
+    var p = Math.min(100, Math.floor((ts - t0) / DUR * 100));
+    if (p !== last){
+      last = p;
+      fill.style.width = p + '%'; pct.textContent = p + '%'; el.setAttribute('aria-valuenow', String(p));
+      for (var i = STEPS.length - 1; i >= 0; i--) if (p >= STEPS[i][0]) { step.textContent = STEPS[i][1]; break; }
+    }
+    if (p < 100) requestAnimationFrame(frame);
+    else setTimeout(function(){
+      el.classList.add('out');
+      document.documentElement.style.overflow = prevOverflow;
+      setTimeout(function(){ el.remove(); st.remove(); }, 500);
+    }, 250);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
 <!doctype html>
 <html lang="pt-BR">
 <head>
