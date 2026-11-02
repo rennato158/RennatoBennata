@@ -64,7 +64,7 @@ export function redis() {
 }
 export function blobToken() { const t = findEnv('BLOB_READ_WRITE_TOKEN'); return t ? t.value : undefined; }
 
-export const COLLECTIONS = ['atletas', 'shortlists', 'shortlistsSalvas'];
+export const COLLECTIONS = ['atletas', 'shortlists', 'shortlistsSalvas', 'treinadores', 'historicoTreinadores', 'avaliacoesTreinadores'];
 export const ROLES = ['admin', 'editor', 'leitor'];
 const COOKIE = 'ba_sess';
 const MAX_AGE = 60 * 60 * 24 * 30; // 30 dias
