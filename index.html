@@ -1152,7 +1152,7 @@ body.ro #btnTrNew,body.ro #btnTrImport,body.ro #trEdit,body.ro #trDelZone,body.r
 <div class="picker" id="trJsDlg" hidden role="dialog" aria-modal="true" aria-labelledby="trJsTitle">
   <div class="pk-box" style="width:min(900px,100%)">
     <div class="pk-head"><div><div class="eyebrow">Importação em lote</div><h3 id="trJsTitle">Importar treinadores (JSON)</h3></div><button type="button" class="btn" id="trJsClose">Fechar</button></div>
-    <div class="hint" style="margin:0">Importe cadastros, histórico profissional e avaliações a partir de um arquivo <b>.json</b>. Nada é gravado antes da conferência: você vê o resultado da validação e confirma a importação. Treinadores já cadastrados são reconhecidos pelo nome (ou nome esportivo + nascimento) e não são duplicados.</div>
+    <div class="hint" style="margin:0">Importe a <b>identificação</b> e o <b>histórico profissional</b> dos treinadores a partir de um arquivo <b>.json</b> (avaliações também são aceitas). Nada é gravado antes da conferência: você vê o resultado da validação e confirma a importação. Treinadores já cadastrados são reconhecidos pelo nome (ou nome esportivo + nascimento) e não são duplicados.</div>
     <div class="jsdrop" id="jsDrop">Arraste o arquivo .json aqui ou <button type="button" class="btn primary" id="jsPick">Escolher arquivo</button><button type="button" class="btn" id="jsModelo">Baixar modelo</button><input type="file" id="jsFile" accept=".json,application/json" hidden></div>
     <details><summary class="evmeta" style="cursor:pointer">Ou colar o conteúdo JSON</summary>
       <textarea id="jsPaste" style="margin-top:8px;width:100%;min-height:110px;border:1px solid var(--line-2);background:var(--bg);border-radius:8px;padding:9px 11px;font-family:ui-monospace,monospace;font-size:12px" placeholder='{"treinadores": [ { "nome": "...", "perfilPredominante": "Estrategista" } ]}'></textarea>
@@ -1160,8 +1160,8 @@ body.ro #btnTrNew,body.ro #btnTrImport,body.ro #trEdit,body.ro #trDelZone,body.r
     </details>
     <div class="hint" id="jsState" style="margin:0"></div>
     <div class="jsmodo" id="jsModo" hidden><b>Treinadores já cadastrados:</b>
-      <label><input type="radio" name="jsModo" value="manter" checked> Manter dados atuais e só acrescentar histórico/avaliações novos</label>
-      <label><input type="radio" name="jsModo" value="atualizar"> Atualizar com os dados do arquivo</label></div>
+      <label><input type="radio" name="jsModo" value="completar" checked> Completar só os campos vazios e acrescentar o histórico novo</label>
+      <label><input type="radio" name="jsModo" value="atualizar"> Substituir pelos dados do arquivo</label></div>
     <div class="jsprev" id="jsPrev"></div>
     <div class="row" style="justify-content:space-between;align-items:center"><div class="evmeta" id="jsProg"></div><button type="button" class="btn primary" id="jsGo" hidden>Importar</button></div>
   </div>
@@ -3045,10 +3045,23 @@ $('#trEvSave').onclick = async () => {
 /* ---------- Importar treinadores via JSON ---------- */
 const JS_CAMPOS = ['nome','nomeEsportivo','nacionalidade','nascimento','clube','situacao','licenca','observacoes','foto','perfis','perfilPredominante','perfilSecundario','filosofia',
   'sistemaPrincipal','sistemasAlternativos','flexibilidade','sistemasObs','modelo','ogolUrl','historico','avaliacoes'];
-const JS_ALIAS = { nome_completo:'nome', nomecompleto:'nome', nome_esportivo:'nomeEsportivo', nomeesportivo:'nomeEsportivo', apelido:'nomeEsportivo', clubeatual:'clube', clube_atual:'clube',
-  datanascimento:'nascimento', data_nascimento:'nascimento', situacaocontratual:'situacao', justificativa:'filosofia', justificativaperfil:'filosofia', sistema:'sistemaPrincipal',
-  sistemas:'sistemasAlternativos', alternativos:'sistemasAlternativos', fotourl:'foto', ogol:'ogolUrl', experiencias:'historico', historicoprofissional:'historico' };
-const jsKey = k => { const n = norm(k).replace(/[\s.-]/g, ''); return JS_CAMPOS.find(c => c.toLowerCase() === n) || JS_ALIAS[n] || JS_ALIAS[norm(k).replace(/\s/g, '_')] || null; };
+const kn = k => norm(String(k)).replace(/[^a-z0-9]/g, '');
+const JS_ALIAS = {
+  nome:['nome','nomecompleto','name','fullname','treinador','coach'], nomeEsportivo:['nomeesportivo','apelido','nomeartistico','nickname','knownas'],
+  nacionalidade:['nacionalidade','pais','country','nationality','naturalidade'], nascimento:['nascimento','datanascimento','datadenascimento','dtnascimento','datanasc','birth','birthdate','dateofbirth','dob'],
+  clube:['clube','clubeatual','equipe','equipeatual','time','timeatual','club','currentclub'], situacao:['situacao','situacaocontratual','status','contrato','vinculo'],
+  licenca:['licenca','licence','license','licencacbf'], observacoes:['observacoes','observacao','obs','notas'], foto:['foto','fotourl','imagem','photo','image','fotolink'],
+  perfis:['perfis'], perfilPredominante:['perfilpredominante','perfil','perfilprincipal'], perfilSecundario:['perfilsecundario'], filosofia:['filosofia','justificativa','justificativaperfil'],
+  sistemaPrincipal:['sistemaprincipal','sistema'], sistemasAlternativos:['sistemasalternativos','alternativos','sistemas'], flexibilidade:['flexibilidade'], sistemasObs:['sistemasobs'],
+  modelo:['modelo','modelodejogo'], ogolUrl:['ogolurl','ogol','linkogol'],
+  historico:['historico','historicoprofissional','carreira','trabalhos','experiencias','clubes','clubesanteriores','career','historicodetrabalhos'], avaliacoes:['avaliacoes'] };
+const JS_SKIP = ['idade','age','id','aproveitamento','totais','total'];
+const JS_GRUPOS = ['identificacao','dadosdeidentificacao','dadosidentificacao','dadospessoais','dados','identification','perfil'];
+const jsKey = k => { const n = kn(k); return Object.keys(JS_ALIAS).find(c => JS_ALIAS[c].includes(n)) || null; };
+const HX_ALIAS = { clube:['clube','equipe','time','club','team','clubeequipe'], pais:['pais','country','paisdoclube'], funcao:['funcao','cargo','role','posicao'],
+  inicio:['inicio','datainicio','datadeinicio','de','desde','start','entrada','chegada','admissao'], fim:['fim','termino','datafim','datatermino','ate','saida','datasaida','end'],
+  temporada:['temporada','temporadas','periodo','season','ano','anos'], competicoes:['competicoes','competicao','campeonatos','torneios'],
+  jogos:['jogos','j','partidas','games','pj'], vitorias:['vitorias','v','wins'], empates:['empates','e','draws'], derrotas:['derrotas','d','losses'], titulos:['titulos','conquistas','titles'] };
 const jsStr = v => v == null ? '' : Array.isArray(v) ? v.map(x => String(x).trim()).filter(Boolean).join(', ') : String(v).trim();
 function jsData(v){ // -> 'YYYY-MM-DD' | '' | null (inválida)
   const s = jsStr(v); if (!s) return '';
@@ -3062,6 +3075,18 @@ function jsMes(v, fim){ // -> 'YYYY-MM' | '' | null
   m = s.match(/^(?:\d{1,2}[\/.-])?(\d{1,2})[\/.-](\d{4})$/); if (m) return +m[1] >= 1 && +m[1] <= 12 ? `${m[2]}-${m[1].padStart(2,'0')}` : null;
   m = s.match(/^(\d{4})$/); if (m) return `${m[1]}-${fim ? '12' : '01'}`;
   return null;
+}
+function jsPeriodo(v){ // -> { ini, fim } | null ; fim undefined = não informado
+  const s = jsStr(v); if (!s) return null;
+  const ano = new Date().getFullYear();
+  if (/^\d{4}$/.test(s)) return { ini: `${s}-01`, fim: +s === ano ? '' : `${s}-12` };
+  const um = jsMes(s, false); if (um) return { ini: um, fim: undefined };
+  const m = s.match(/^(.+?)(?:\s+(?:a|até|ate)\s+|\s*[–—]\s*|\s+-\s+|\/(?=\d{2,4}$)|-(?=\d{4}$))(.+)$/i);
+  if (!m) return null;
+  let L = m[1].trim(), R = m[2].trim();
+  if (/^\d{2}$/.test(R) && /^\d{4}$/.test(L)) R = L.slice(0, 2) + R;
+  const ini = jsMes(L, false), fim = /^\d{4}$/.test(R) && +R === ano ? '' : jsMes(R, true);
+  return ini && fim !== null ? { ini, fim } : null;
 }
 const jsNum = v => { if (v == null || v === '') return null; const n = Number(String(v).replace(',', '.')); return Number.isFinite(n) ? n : NaN; };
 const jsPerfil = v => { const n = norm(jsStr(v)); return n ? (PERFIS.find(p => p.k === n || norm(p.l) === n) || {}).k || null : ''; };
@@ -3085,7 +3110,7 @@ function jsLista(raw){
   if (raw && typeof raw === 'object'){
     const k = Object.keys(raw).find(k => /^treinador(es)?$/i.test(k) || /^coaches$/i.test(k));
     if (k) return Array.isArray(raw[k]) ? raw[k] : [raw[k]];
-    if (raw.nome || raw.nomeEsportivo || raw.nome_esportivo) return [raw];
+    if (Object.keys(raw).some(k => jsKey(k) === 'nome' || jsKey(k) === 'nomeEsportivo' || JS_GRUPOS.includes(kn(k)))) return [raw];
   }
   return null;
 }
@@ -3095,8 +3120,9 @@ function jsTreinador(o, idx, vistos){
   const r = { idx, avisos: [], hist: [], avs: [], erro: '' };
   if (!o || typeof o !== 'object' || Array.isArray(o)){ r.erro = 'Registro inválido (esperado um objeto).'; return r; }
   if (o._exemplo){ r.erro = 'Registro de exemplo do modelo: substitua pelos dados reais e apague a linha "_exemplo".'; r.nomeArq = jsStr(o.nomeEsportivo || o.nome); return r; }
-  const src = {}, desc = [];
-  for (const [k, v] of Object.entries(o)){ if (k.startsWith('_')) continue; const c = jsKey(k); if (c) src[c] = v; else desc.push(k); }
+  const src = {}, desc = [], flat = {};
+  for (const [k, v] of Object.entries(o)){ if (JS_GRUPOS.includes(kn(k)) && v && typeof v === 'object' && !Array.isArray(v)) Object.assign(flat, v); else flat[k] = v; }
+  for (const [k, v] of Object.entries(flat)){ if (k.startsWith('_') || JS_SKIP.includes(kn(k))) continue; const c = jsKey(k); if (c) src[c] = v; else desc.push(k); }
   if (desc.length) r.avisos.push(`Campos ignorados: ${desc.join(', ')}`);
   const d = {}, put = (k, v) => { if (v !== '' && v != null) d[k] = v; };
   ['nome','nomeEsportivo','nacionalidade','clube','licenca','observacoes','filosofia','sistemasObs'].forEach(k => put(k, jsStr(src[k])));
@@ -3144,9 +3170,13 @@ function jsTreinador(o, idx, vistos){
   hxArr.forEach((x, i) => {
     const lbl = `Histórico ${i + 1}`;
     if (!x || typeof x !== 'object'){ r.avisos.push(`${lbl}: registro inválido; ignorado.`); return; }
-    const g = k => x[k] ?? x[Object.keys(x).find(kk => norm(kk).replace(/[\s_]/g, '') === norm(k))];
-    const ini = jsMes(g('inicio'), false), fim = jsMes(g('fim') ?? g('termino'), true);
-    if (ini === null || fim === null){ r.avisos.push(`${lbl} (${jsStr(g('clube'))}): data inválida (use AAAA-MM); ignorado.`); return; }
+    const g = f => { const k = Object.keys(x).find(k => HX_ALIAS[f].includes(kn(k))); return k == null ? undefined : x[k]; };
+    const vIni = jsStr(g('inicio')), vFim = g('fim'), vTemp = jsStr(g('temporada'));
+    if (!vIni && !vTemp){ r.avisos.push(`${lbl} (${jsStr(g('clube')) || 'sem clube'}): informe o início (AAAA-MM) ou a temporada; ignorado.`); return; }
+    const p = jsPeriodo(vIni || vTemp);
+    const fim = vFim != null && jsStr(vFim) !== '' ? jsMes(vFim, true) : (p ? (p.fim ?? '') : '');
+    const ini = p ? p.ini : null;
+    if (!ini || fim === null){ r.avisos.push(`${lbl} (${jsStr(g('clube')) || 'sem clube'}): data inválida "${vIni || vTemp}${vFim ? ' / ' + jsStr(vFim) : ''}" (use AAAA-MM, MM/AAAA, AAAA ou 2023/2024); ignorado.`); return; }
     const h = { treinadorId: r.existente ? r.existente.id : '', clube: jsStr(g('clube')), pais: jsStr(g('pais')), funcao: jsStr(g('funcao')) || 'Treinador principal', inicio: ini, fim,
       competicoes: jsStr(g('competicoes')), jogos: jsNum(g('jogos')), vitorias: jsNum(g('vitorias')), empates: jsNum(g('empates')), derrotas: jsNum(g('derrotas')), titulos: jsStr(g('titulos')), fonte: 'json' };
     h.aproveitamento = aprovDe(h.jogos, h.vitorias, h.empates);
@@ -3200,7 +3230,7 @@ function jsTreinador(o, idx, vistos){
     const rk = Object.entries(pfs).sort((a, b) => b[1] - a[1]);
     if (rk.length && (rk.length === 1 || rk[0][1] > rk[1][1])) { d.perfilPredominante = rk[0][0]; r.avisos.push(`Perfil predominante definido pelo maior nível: ${PK[rk[0][0]].l}.`); }
   }
-  if (!r.existente && !d.perfilPredominante){ r.erro = 'Perfil predominante obrigatório: informe "perfilPredominante" ou os níveis em "perfis" (com um maior nível único).'; return r; }
+  if (!r.existente && !d.perfilPredominante) r.avisos.push('Perfil predominante não informado: defina depois na ficha (aba Perfil e filosofia).');
   if (d.perfilSecundario && d.perfilSecundario === (d.perfilPredominante || (r.existente && r.existente.perfilPredominante))) delete d.perfilSecundario;
   return r;
 }
@@ -3216,21 +3246,33 @@ function jsAnalisar(txt, origem){
   const vistos = []; jsRows = lista.map((o, i) => jsTreinador(o, i, vistos));
   jsRender(origem);
 }
+const jsVazio = v => v == null || v === '' || (Array.isArray(v) && !v.length) || (typeof v === 'object' && !Array.isArray(v) && !Object.values(v).some(x => x !== '' && x != null));
+function jsUpd(r, modo){ // campos que serão gravados num cadastro existente
+  const e = r.existente, d = r.dados, u = {};
+  for (const [k, v] of Object.entries(d)){
+    if (k === 'perfis' || k === 'modelo'){
+      const base = e[k] || {}, m = modo === 'atualizar' ? Object.assign({}, base, v) : Object.assign({}, v, Object.fromEntries(Object.entries(base).filter(([, x]) => x !== '' && x != null)));
+      if (JSON.stringify(m) !== JSON.stringify(base)) u[k] = m;
+    } else if (k === 'situacao' ? (modo === 'atualizar' ? v !== e[k] : (!e[k] || e[k] === 'Não informado') && v !== e[k]) : (modo === 'atualizar' ? JSON.stringify(v) !== JSON.stringify(e[k]) : jsVazio(e[k]))) u[k] = v;
+  }
+  if (u.perfilPredominante && modo !== 'atualizar' && e.perfilPredominante) delete u.perfilPredominante;
+  return u;
+}
 function jsRender(origem){
   if (origem !== undefined) jsOrig = origem; else origem = jsOrig;
-  const modo = ($('input[name="jsModo"]:checked') || {}).value || 'manter';
+  const modo = ($('input[name="jsModo"]:checked') || {}).value || 'completar';
   const ok = jsRows.filter(r => !r.erro), novos = ok.filter(r => !r.existente).length, exist = ok.length - novos;
   const nh = ok.reduce((s, r) => s + r.hist.length, 0), na = ok.reduce((s, r) => s + r.avs.length, 0), ne = jsRows.length - ok.length;
   $('#jsState').innerHTML = `${origem ? `<b>${esc(origem)}</b> · ` : ''}${jsRows.length} treinador(es) no arquivo: <b>${novos}</b> novo(s), <b>${exist}</b> já cadastrado(s)${ne ? `, <span class="err">${ne} com erro (não serão importados)</span>` : ''} · ${nh} experiência(s) e ${na} avaliação(ões) novas.`;
   $('#jsModo').hidden = !exist;
   $('#jsPrev').innerHTML = `<div class="tablewrap"><table><thead><tr><th>#</th><th>Treinador</th><th>Situação</th><th class="num">Histórico</th><th class="num">Avaliações</th><th>Observações</th></tr></thead><tbody>
     ${jsRows.map(r => `<tr class="${r.erro ? 'jserr' : ''}"><td>${r.idx + 1}</td><td><b>${esc(r.nomeArq || '—')}</b>${r.dados && r.dados.clube ? `<div class="evmeta">${esc(r.dados.clube)}</div>` : ''}</td>
-      <td>${r.erro ? '<span class="jsb err">Erro</span>' : r.existente ? `<span class="jsb ex">Já cadastrado</span><div class="evmeta">${modo === 'atualizar' ? 'dados serão atualizados' : 'dados mantidos'}</div>` : '<span class="jsb ok">Novo</span>'}</td>
+      <td>${r.erro ? '<span class="jsb err">Erro</span>' : r.existente ? `<span class="jsb ex">Já cadastrado</span><div class="evmeta">${(n => n ? `${n} campo(s) ${modo === 'atualizar' ? 'substituído(s)' : 'preenchido(s)'}` : 'cadastro sem alteração')(Object.keys(jsUpd(r, modo)).length)}</div>` : '<span class="jsb ok">Novo</span>'}</td>
       <td class="num">${r.erro ? '' : r.hist.length + (r.hxDup ? `<div class="evmeta">${r.hxDup} já existente(s)</div>` : '')}</td>
       <td class="num">${r.erro ? '' : r.avs.length + (r.avDup ? `<div class="evmeta">${r.avDup} já existente(s)</div>` : '')}</td>
       <td class="jsav">${r.erro ? `<span class="err">${esc(r.erro)}</span>` : r.avisos.map(a => `<div>${esc(a)}</div>`).join('')}</td></tr>`).join('')}
     </tbody></table></div>`;
-  const util = ok.filter(r => !r.existente || r.hist.length || r.avs.length || (modo === 'atualizar' && Object.keys(r.dados).length)).length;
+  const util = ok.filter(r => !r.existente || r.hist.length || r.avs.length || Object.keys(jsUpd(r, modo)).length).length;
   $('#jsGo').hidden = !util; $('#jsGo').textContent = `Importar ${util} treinador(es)`;
 }
 $('#jsModo').addEventListener('change', () => jsRender());
@@ -3246,7 +3288,7 @@ $('#trJsClose').onclick = () => { $('#trJsDlg').hidden = true; };
 
 $('#jsGo').onclick = async () => {
   if (!db) return;
-  const modo = ($('input[name="jsModo"]:checked') || {}).value || 'manter';
+  const modo = ($('input[name="jsModo"]:checked') || {}).value || 'completar';
   const lista = jsRows.filter(r => !r.erro);
   const btn = $('#jsGo'); btn.disabled = true; $('#trJsClose').disabled = true;
   let nT = 0, nU = 0, nH = 0, nA = 0, falhas = 0;
@@ -3258,19 +3300,15 @@ $('#jsGo').onclick = async () => {
         let id;
         if (r.existente){
           id = r.existente.id;
-          if (modo === 'atualizar' && Object.keys(r.dados).length){
-            const upd = { ...r.dados, atualizadoEm: now() };
-            if (r.dados.perfis) upd.perfis = Object.assign({}, r.existente.perfis, r.dados.perfis);
-            if (r.dados.modelo) upd.modelo = Object.assign({}, r.existente.modelo, r.dados.modelo);
-            await db.collection('treinadores').doc(id).update(upd); nU++;
-          }
+          const upd = jsUpd(r, modo);
+          if (Object.keys(upd).length){ upd.atualizadoEm = now(); await db.collection('treinadores').doc(id).update(upd); nU++; }
         } else {
           const d = r.dados, t = now();
           id = slug(d.nomeEsportivo || d.nome) + '-' + Math.random().toString(36).slice(2, 6);
           await db.collection('treinadores').doc(id).set({
             nome: d.nome || d.nomeEsportivo, nomeEsportivo: d.nomeEsportivo || d.nome, nacionalidade: d.nacionalidade || '', nascimento: d.nascimento || '', clube: d.clube || '',
             situacao: d.situacao || 'Não informado', licenca: d.licenca || '', observacoes: d.observacoes || '', foto: d.foto || '', fotoAsset: null, fotoOrig: null, fotoCrop: null,
-            perfis: d.perfis || {}, perfilPredominante: d.perfilPredominante, perfilSecundario: d.perfilSecundario || '', filosofia: d.filosofia || '',
+            perfis: d.perfis || {}, perfilPredominante: d.perfilPredominante || '', perfilSecundario: d.perfilSecundario || '', filosofia: d.filosofia || '',
             sistemaPrincipal: d.sistemaPrincipal || '', sistemasAlternativos: d.sistemasAlternativos || [], flexibilidade: d.flexibilidade || '', sistemasObs: d.sistemasObs || '',
             modelo: Object.assign({ estrutura:'', comBola:'', semBola:'', bolasParadas:'' }, d.modelo), ogolUrl: d.ogolUrl || '', criadoEm: t, atualizadoEm: t });
           nT++;
@@ -3291,21 +3329,13 @@ $('#jsGo').onclick = async () => {
 /* Modelo de arquivo para preenchimento */
 $('#jsModelo').onclick = async () => {
   const modelo = {
-    _instrucoes: 'Preencha a lista "treinadores" com dados reais. Apague o registro de exemplo (que contém "_exemplo") antes de importar. Campos vazios podem ser omitidos. Datas: AAAA-MM-DD (nascimento, avaliações) e AAAA-MM (histórico; "fim" vazio = trabalho atual). Perfis: níveis de 1 a 5. Notas das avaliações: 1 Baixo, 2 Regular, 3 Bom, 4 Alto ou "Não avaliado". Dimensões: sistema, modelo, trocas, leitura, midia.',
+    _instrucoes: 'Preencha a lista "treinadores" com dados reais e apague o registro de exemplo (que contém "_exemplo"). Campos vazios podem ser omitidos. Identificação: nascimento em AAAA-MM-DD ou DD/MM/AAAA; situação Empregado, Livre ou Não informado. Histórico: uma linha por trabalho; início/fim em AAAA-MM, MM/AAAA ou AAAA ("fim" vazio = trabalho atual), ou use "temporada" (ex.: 2024 ou 2023/2024). O aproveitamento é calculado automaticamente.',
     treinadores: [{
       _exemplo: true,
-      nome: 'Nome completo', nomeEsportivo: 'Nome esportivo', nacionalidade: 'País', nascimento: 'AAAA-MM-DD', clube: 'Clube atual', situacao: 'Empregado | Livre | Não informado',
-      licenca: 'CBF Licença PRO', foto: 'https://link-da-foto.jpg', observacoes: '',
-      perfis: { estrategista: 0, controlador: 0, propositivo: 0, vertical: 0 }, perfilPredominante: 'Estrategista | Controlador | Propositivo | Vertical', perfilSecundario: '', filosofia: 'Justificativa do perfil',
-      sistemaPrincipal: '4-3-3', sistemasAlternativos: ['4-2-3-1'], flexibilidade: 'Baixa | Média | Alta', sistemasObs: '',
-      modelo: { estrutura: '', comBola: '', semBola: '', bolasParadas: '' },
-      ogolUrl: '',
-      historico: [{ clube: 'Clube', pais: 'País', funcao: 'Treinador principal', inicio: 'AAAA-MM', fim: 'AAAA-MM', competicoes: 'Série B, Copa do Brasil', jogos: 0, vitorias: 0, empates: 0, derrotas: 0, titulos: '' }],
-      avaliacoes: [
-        { dimensao: 'leitura', data: 'AAAA-MM-DD', avaliador: 'Nome do analista', nota: 3, observacoes: 'Justificativa técnica da nota',
-          criterios: Object.fromEntries(DIMS.leitura.crit.map(([k]) => [k, { nota: 'Não avaliado', obs: '' }])) },
-        { dimensao: 'trocas', data: 'AAAA-MM-DD', avaliador: 'Nome do analista', nota: 'Não avaliado', observacoes: '', jogosObservados: 0,
-          criterios: Object.fromEntries(DIMS.trocas.crit.map(([k]) => [k, { nota: 'Não avaliado', obs: '' }])), intervencoes: [{ jogo: 'Adversário / data', observado: 55, executado: 63, efeito: 'Positivo | Neutro | Negativo' }] },
+      identificacao: { nome: 'Nome completo', nomeEsportivo: 'Nome esportivo', nacionalidade: 'País', nascimento: 'AAAA-MM-DD', clube: 'Clube atual', situacao: 'Empregado | Livre | Não informado', licenca: 'CBF Licença PRO', foto: 'https://link-da-foto.jpg', observacoes: '' },
+      historico: [
+        { clube: 'Clube', pais: 'País', funcao: 'Treinador principal', inicio: 'AAAA-MM', fim: '', competicoes: 'Série B, Copa do Brasil', jogos: 0, vitorias: 0, empates: 0, derrotas: 0, titulos: '' },
+        { clube: 'Clube anterior', pais: 'País', funcao: 'Treinador principal', inicio: 'AAAA-MM', fim: 'AAAA-MM', competicoes: '', jogos: 0, vitorias: 0, empates: 0, derrotas: 0, titulos: '' },
       ],
     }],
   };
