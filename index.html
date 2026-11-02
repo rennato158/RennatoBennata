@@ -1005,8 +1005,8 @@ body.ro #btnTrNew,body.ro #btnTrImport,body.ro #trEdit,body.ro #trDelZone,body.r
           </div>
           <div class="section-t">Identificação</div>
           <div class="fs">
-            <div class="f s4"><label for="trNome">Nome completo <span class="req">*</span></label><input id="trNome" autocomplete="off" required></div>
-            <div class="f s2"><label for="trNomeEsp">Nome esportivo <span class="req">*</span></label><input id="trNomeEsp" autocomplete="off" required></div>
+            <div class="f s4"><label for="trNome">Nome completo</label><input id="trNome" autocomplete="off"></div>
+            <div class="f s2"><label for="trNomeEsp">Nome esportivo</label><input id="trNomeEsp" autocomplete="off"></div>
             <div class="f s2"><label for="trNac">Nacionalidade</label><input id="trNac" list="trDlNac" autocomplete="off" placeholder="Ex.: Brasil"></div>
             <div class="f s2"><label for="trNasc">Data de nascimento</label><input id="trNasc" type="date"></div>
             <div class="f s2"><label>Idade</label><div class="idade-out" id="trIdade">—</div></div>
@@ -1022,7 +1022,7 @@ body.ro #btnTrNew,body.ro #btnTrImport,body.ro #trEdit,body.ro #trDelZone,body.r
         <div class="tev-head"><div class="section-t">Histórico profissional · ordem cronológica decrescente</div></div>
         <div class="hx-tools">
           <button type="button" class="btn primary ed" id="trHxAdd">Adicionar experiência</button>
-          <button type="button" class="btn ed" id="trOgBtn">Buscar histórico (ogol)</button>
+          <button type="button" class="btn ed" id="trOgBtn" hidden style="display:none">Buscar histórico (ogol)</button>
           <a class="btn" id="trOgLink" href="#" target="_blank" rel="noopener">Abrir no ogol</a>
           <a class="btn" id="trTmLink" href="#" target="_blank" rel="noopener">Abrir no Transfermarkt</a>
         </div>
@@ -1037,7 +1037,7 @@ body.ro #btnTrNew,body.ro #btnTrImport,body.ro #trEdit,body.ro #trDelZone,body.r
             <div class="pf-rows" id="trPfRows"></div>
           </div>
           <div class="fs">
-            <div class="f s3"><label for="trPfMain">Perfil predominante <span class="req">*</span></label><select id="trPfMain"><option value="">Avalie os níveis acima</option></select><div class="pf-tie" id="trPfTie"></div></div>
+            <div class="f s3"><label for="trPfMain">Perfil predominante</label><select id="trPfMain"><option value="">Avalie os níveis acima</option></select><div class="pf-tie" id="trPfTie"></div></div>
             <div class="f s3"><label for="trPfSec">Perfil secundário</label><select id="trPfSec"><option value="">—</option></select></div>
             <div class="f"><label for="trFilo">Justificativa da classificação</label><textarea id="trFilo" placeholder="Explique, com base nos jogos observados, por que o treinador se encaixa neste perfil."></textarea></div>
           </div>
@@ -1114,7 +1114,7 @@ body.ro #btnTrNew,body.ro #btnTrImport,body.ro #trEdit,body.ro #trDelZone,body.r
       <div class="f s3"><label for="hxClube">Clube <span class="req">*</span></label><input id="hxClube" autocomplete="off"></div>
       <div class="f s3"><label for="hxPais">País</label><input id="hxPais" list="trDlNac" autocomplete="off"></div>
       <div class="f s2"><label for="hxFuncao">Função exercida</label><input id="hxFuncao" list="trDlFuncao" autocomplete="off" value="Treinador principal"></div>
-      <div class="f s2"><label for="hxIni">Início <span class="req">*</span></label><input id="hxIni" type="month"></div>
+      <div class="f s2"><label for="hxIni">Início</label><input id="hxIni" type="month"></div>
       <div class="f s2"><label for="hxFim">Término</label><input id="hxFim" type="month"><span class="hint" style="margin:0">Vazio = trabalho atual</span></div>
       <div class="f"><label for="hxComp">Competições disputadas</label><input id="hxComp" autocomplete="off" placeholder="Ex.: Série A, Copa do Brasil, Estadual"></div>
       <div class="f s2"><label for="hxJ">Jogos</label><input id="hxJ" type="number" min="0" inputmode="numeric"></div>
@@ -2753,15 +2753,13 @@ async function save(){
   const err = m => { $('#trErr').textContent = m; return false; };
   $('#trErr').textContent = '';
   const nome = $('#trNome').value.trim(), nomeEsp = $('#trNomeEsp').value.trim();
-  if (!nome){ setSec('id'); $('#trNome').focus(); return err('Informe o nome completo.'); }
-  if (!nomeEsp){ setSec('id'); $('#trNomeEsp').focus(); return err('Informe o nome esportivo.'); }
+  if (!nome && !nomeEsp){ setSec('id'); $('#trNome').focus(); return err('Informe ao menos o nome do treinador (completo ou esportivo) para identificar o cadastro.'); }
   const nasc = $('#trNasc').value;
-  if (nasc && (idadeDe(nasc) == null || idadeDe(nasc) < 18)) { setSec('id'); return err('Confira a data de nascimento.'); }
+  if (nasc && nasc > today()) { setSec('id'); return err('A data de nascimento não pode estar no futuro.'); }
   const pf = $('#trPfMain').value;
-  if (!pf){ setSec('perfil'); return err('Defina o perfil predominante: avalie os níveis dos quatro perfis (obrigatório).'); }
   if ($('#trSisP').value === '__outro' && !/^\d(-\d){2,4}$/.test(sisPrincipal())){ setSec('sistema'); return err('Digite o sistema principal no formato 4-1-3-2.'); }
   // impede duplicidade: mesmo nome completo, ou mesmo nome esportivo com a mesma data de nascimento
-  const dup = T.find(t => t.id !== (editing && editing.id) && (norm(t.nome) === norm(nome) || (nasc && t.nascimento === nasc && norm(t.nomeEsportivo) === norm(nomeEsp))));
+  const dup = T.find(t => t.id !== (editing && editing.id) && ((nome && norm(t.nome) === norm(nome)) || (nasc && t.nascimento === nasc && norm(nomeDe(t)) === norm(nomeEsp || nome))));
   if (dup){
     setSec('id');
     $('#trDupZone').innerHTML = `<div class="dup"><div>Já existe um cadastro de <b>${esc(nomeDe(dup))}</b> (${esc(dup.clube || 'sem clube')}). Para evitar registros duplicados, abra o cadastro existente.</div><div class="row"><button type="button" class="btn primary" data-open="${esc(dup.id)}">Abrir cadastro existente</button></div></div>`;
@@ -2769,7 +2767,7 @@ async function save(){
   }
   const now = new Date().toISOString();
   const data = {
-    nome, nomeEsportivo: nomeEsp, nacionalidade: $('#trNac').value.trim(), nascimento: nasc, clube: $('#trClube').value.trim(),
+    nome: nome || nomeEsp, nomeEsportivo: nomeEsp || nome, nacionalidade: $('#trNac').value.trim(), nascimento: nasc, clube: $('#trClube').value.trim(),
     situacao: $('#trSit').value, licenca: $('#trLic').value.trim(), observacoes: $('#trObs').value.trim(),
     foto: photo.link || '', fotoAsset: photo.asset || null, fotoOrig: photo.asset ? (photo.orig || null) : null, fotoCrop: photo.asset ? (photo.crop || null) : null,
     perfis: Object.fromEntries(PERFIS.filter(p => perfis[p.k]).map(p => [p.k, perfis[p.k]])),
@@ -2780,7 +2778,7 @@ async function save(){
     ogolUrl: (editing && editing.ogolUrl) || '', ultimaAtualizacao: today(),
     criadoEm: (editing && editing.criadoEm) || now, atualizadoEm: now,
   };
-  const id = editing ? editing.id : slug(nomeEsp) + '-' + Math.random().toString(36).slice(2, 6);
+  const id = editing ? editing.id : slug(nomeEsp || nome) + '-' + Math.random().toString(36).slice(2, 6);
   $('#trSave').disabled = true;
   try{
     await db.collection('treinadores').doc(id).set(data);
@@ -2829,7 +2827,7 @@ function renderHist(){
   const J = sum('jogos'), V = sum('vitorias'), E = sum('empates'), D = sum('derrotas');
   const ap = aprovDe(J, V, E);
   box.innerHTML = `<div class="tablewrap"><table class="hxt"><thead><tr><th>Período</th><th>Clube</th><th>Função</th><th>Competições</th><th class="num">J</th><th class="num">V</th><th class="num">E</th><th class="num">D</th><th class="num">Aprov.</th><th>Títulos</th><th></th></tr></thead><tbody>
-    ${list.map(h => `<tr><td style="white-space:nowrap">${fmtD(h.inicio)} – ${h.fim ? fmtD(h.fim) : '<b>atual</b>'}${h.fonte === 'ogol' ? '<div class="src">ogol.com.br</div>' : ''}</td>
+    ${list.map(h => `<tr><td style="white-space:nowrap">${h.inicio || h.fim ? `${fmtD(h.inicio)} – ${h.fim ? fmtD(h.fim) : '<b>atual</b>'}` : '<span class="evmeta">Período não informado</span>'}${h.fonte === 'ogol' ? '<div class="src">ogol.com.br</div>' : ''}</td>
       <td><b>${esc(h.clube)}</b>${h.pais ? `<div class="evmeta">${esc(h.pais)}</div>` : ''}</td><td>${esc(h.funcao||'')}</td><td>${esc(h.competicoes||'')}</td>
       <td class="num">${h.jogos ?? ''}</td><td class="num">${h.vitorias ?? ''}</td><td class="num">${h.empates ?? ''}</td><td class="num">${h.derrotas ?? ''}</td>
       <td class="num">${h.aproveitamento != null ? h.aproveitamento.toLocaleString('pt-BR') + '%' : ''}</td><td>${esc(h.titulos||'')}</td>
@@ -2850,9 +2848,9 @@ function openHx(h){
 }
 function validaHx(h, ignoreId, list){
   if (!h.clube) return 'Informe o clube.';
-  if (!/^\d{4}-\d{2}$/.test(h.inicio || '')) return 'Informe o mês e ano de início.';
-  if (h.fim && h.fim < h.inicio) return 'O término não pode ser anterior ao início.';
-  if (h.inicio > today().slice(0, 7)) return 'O início não pode estar no futuro.';
+  if (h.inicio && !/^\d{4}-\d{2}$/.test(h.inicio)) return 'Data de início inválida (use mês e ano).';
+  if (h.inicio && h.fim && h.fim < h.inicio) return 'O término não pode ser anterior ao início.';
+  if (h.inicio && h.inicio > today().slice(0, 7)) return 'O início não pode estar no futuro.';
   for (const k of ['jogos','vitorias','empates','derrotas']) if (h[k] != null && (!Number.isInteger(h[k]) || h[k] < 0)) return 'Jogos, vitórias, empates e derrotas devem ser números inteiros positivos.';
   const r = (h.vitorias||0) + (h.empates||0) + (h.derrotas||0);
   if (h.jogos != null && r > h.jogos) return `Vitórias + empates + derrotas (${r}) é maior que o número de jogos (${h.jogos}).`;
@@ -3023,11 +3021,9 @@ $('#trEvSave').onclick = async () => {
   const g = $('#trEvBody select[data-n="g"]').value;
   const data = $('#evData').value, aval = $('#evAval').value.trim(), obs = $('#evObs').value.trim();
   if (!data || data > today()) return err('Informe a data da avaliação (não pode ser futura).');
-  if (!aval) return err('Informe o analista responsável.');
   const criterios = {};
   $$('#trEvBody .ev-row').forEach(r => { const n = r.querySelector('select').value, o = r.querySelector('input[data-o]').value.trim(); if (n || o) criterios[r.dataset.c] = { nota: n ? +n : null, obs: o }; });
   if (!g && !Object.values(criterios).some(c => c.nota) && !obs) return err('Registre ao menos uma nota ou observação.');
-  if (g && !obs) return err('Escreva a justificativa técnica da nota.');
   const rec = { treinadorId: editing.id, dimensao: evDim, nota: g ? +g : null, observacoes: obs, data, avaliador: aval, criterios, criadoEm: new Date().toISOString() };
   if (evDim === 'trocas'){
     const iv = []; let bad = '';
